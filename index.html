@@ -1,0 +1,4699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Purity Kids Academy — Result Portal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%235B2A86%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Georgia%22>P</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK — no build step required) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<!-- PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- QR code generator -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root{
+  --purple-900:#2E1650;
+  --purple-800:#3E1F6E;
+  --purple-700:#5B2A86;
+  --purple-600:#6E36A3;
+  --purple-500:#8546C4;
+  --purple-100:#F1E9FB;
+  --purple-50:#F8F5FC;
+  --white:#FFFFFF;
+  --ink:#241B33;
+  --ink-soft:#5B5468;
+  --border:#E4DCEF;
+  --success:#1B8A5A;
+  --success-bg:#E7F7EF;
+  --warn:#B9720B;
+  --warn-bg:#FDF3E1;
+  --danger:#C23434;
+  --danger-bg:#FCEAEA;
+  --radius:12px;
+  --shadow: 0 4px 18px rgba(46,22,80,0.08);
+  --font-display:'Poppins',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-body);color:var(--ink);background:var(--purple-50);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4,.display{font-family:var(--font-display);color:var(--purple-900);margin:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:var(--font-body);cursor:pointer;}
+img{max-width:100%;display:block;}
+.container{max-width:1180px;margin:0 auto;padding:0 24px;}
+::selection{background:var(--purple-500);color:#fff;}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:999px;border:none;font-weight:600;font-size:14.5px;transition:transform .12s ease, box-shadow .12s ease, background .15s ease, color .15s ease;white-space:nowrap;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--purple-700);color:#fff;box-shadow:0 6px 16px rgba(91,42,134,0.28);}
+.btn-primary:hover{background:var(--purple-800);}
+
+/* Default outline button: readable on WHITE / light backgrounds (tables, panels, modals) */
+.btn-outline{
+    background: transparent;
+    color: var(--purple-700);
+    border: 2px solid var(--purple-700);
+}
+.btn-outline:hover{
+    background: var(--purple-700);
+    color: #ffffff;
+}
+
+/* Use this modifier for outline buttons placed on a dark/purple background
+   (hero banner, sidebar, gradient panels) so they stay white-on-transparent */
+.btn-outline-light{
+    background: transparent;
+    color: #ffffff;
+    border: 2px solid rgba(255,255,255,.75);
+}
+.btn-outline-light:hover{
+    background: #ffffff;
+    color: var(--purple-800);
+}
+
+.btn-ghost{background:transparent;color:var(--purple-700);}
+.btn-ghost:hover{background:var(--purple-100);}
+
+.btn-white{
+    background: #ffffff;
+    color: var(--purple-800);
+    border: 2px solid #ffffff;
+}
+.btn-white:hover{
+    background: transparent;
+    color: #ffffff;
+}
+
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px;}
+.btn-block{width:100%;}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+
+/* ---------- Top nav (public) ---------- */
+.pub-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+.pub-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;color:var(--purple-800);font-size:17px;}
+.brand .logo-badge{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--purple-600),var(--purple-900));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:17px;}
+.pub-links{display:flex;gap:26px;align-items:center;}
+.pub-links a{font-size:14.5px;font-weight:600;color:var(--ink-soft);}
+.pub-links a:hover{color:var(--purple-700);}
+.menu-toggle{display:none;background:none;border:none;font-size:22px;color:var(--purple-800);}
+
+/* ---------- Hero ---------- */
+.hero{background:linear-gradient(160deg,var(--purple-900) 0%,var(--purple-700) 55%,var(--purple-500) 100%);color:#fff;padding:90px 0 110px;position:relative;overflow:hidden;}
+.hero:after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);}
+.hero-inner{position:relative;z-index:2;text-align:center;max-width:720px;margin:0 auto;}
+.eyebrow{display:inline-block;padding:6px 16px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12.5px;letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:22px;}
+.hero h1{
+    color: #ffffff;
+    font-weight: 900;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -1px;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow:
+        0 2px 4px rgba(0,0,0,0.20),
+        0 6px 18px rgba(0,0,0,0.18);
+}
+.hero .motto{
+    color: #f3efff;
+    font-weight: 500;
+    font-size: 24px;
+}
+.hero p.lead{color: #ffffff;
+    font-weight: 500;}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+/* ---------- Sections ---------- */
+.section{padding:70px 0;}
+.section-head{text-align:center;max-width:640px;margin:0 auto 46px;}
+.section-head .tag{color:var(--purple-600);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;}
+.section-head h2{font-size:30px;margin-top:8px;}
+.section-head p{color:var(--ink-soft);margin-top:10px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow);}
+.acad-card{text-align:center;transition:transform .15s;}
+.acad-card:hover{transform:translateY(-4px);}
+.acad-card .icon{width:56px;height:56px;border-radius:14px;background:var(--purple-100);color:var(--purple-700);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;font-weight:800;font-family:var(--font-display);}
+.acad-card h3{font-size:17px;margin-bottom:6px;}
+.acad-card p{font-size:13.5px;color:var(--ink-soft);}
+.anthem-box{white-space:pre-line;font-size:14.5px;line-height:1.9;color:var(--ink-soft);}
+.section-alt{background:var(--purple-50);}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.contact-item{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px;}
+.contact-item .ic{width:38px;height:38px;border-radius:9px;background:var(--purple-100);color:var(--purple-700);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+footer{background:var(--purple-900);color:rgba(255,255,255,.8);padding:46px 0 22px;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px;margin-bottom:30px;}
+footer h4{color:#fff;font-size:14px;margin-bottom:14px;}
+footer a{display:block;font-size:13.5px;color:rgba(255,255,255,.7);margin-bottom:9px;}
+footer a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:18px;font-size:12.5px;text-align:center;color:rgba(255,255,255,.55);}
+
+/* ---------- Forms ---------- */
+label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+input,select,textarea{width:100%;padding:11px 13px;border-radius:9px;border:1.5px solid var(--border);font-family:var(--font-body);font-size:14.5px;color:var(--ink);background:#fff;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple-500);}
+.field{margin-bottom:16px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--purple-900),var(--purple-600));padding:20px;}
+.auth-card{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.auth-card .brand{justify-content:center;margin-bottom:6px;}
+.auth-card h2{text-align:center;font-size:20px;margin-bottom:4px;}
+.auth-card p.sub{text-align:center;color:var(--ink-soft);font-size:13.5px;margin-bottom:26px;}
+.err-msg{background:var(--danger-bg);color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13.5px;margin-bottom:14px;}
+.ok-msg{background:var(--success-bg);color:var(--success);padding:10px 14px;border-radius:8px;font-size:13.5px;margin-bottom:14px;}
+
+/* ---------- App shell (logged in) ---------- */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{width:250px;background:var(--purple-900);color:#fff;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:transform .2s;}
+.sidebar .brand{padding:22px 20px 18px;color:#fff;font-size:15.5px;}
+.sidebar .brand .logo-badge{background:linear-gradient(145deg,#fff,var(--purple-100));color:var(--purple-800);}
+.side-role{padding:0 20px 14px;font-size:12px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.06em;}
+.side-links{flex:1;padding:6px 12px;}
+.side-link{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.78);font-size:14px;font-weight:500;margin-bottom:3px;}
+.side-link:hover{background:rgba(255,255,255,.07);color:#fff;}
+.side-link.active{background:var(--purple-600);color:#fff;}
+.side-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);}
+.side-user{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;}
+.main{flex:1;min-width:0;}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+.topbar h1{font-size:19px;}
+.hamburger{display:none;background:none;border:none;font-size:22px;color:var(--purple-800);}
+.content{padding:26px 28px 60px;}
+
+/* ---------- Dashboard stat cards ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.stat-card .lbl{font-size:12.5px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+.stat-card .val{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--purple-800);margin-top:6px;}
+.stat-card.accent{background:linear-gradient(135deg,var(--purple-700),var(--purple-900));color:#fff;}
+.stat-card.accent .lbl{color:rgba(255,255,255,.75);}
+.stat-card.accent .val{color:#fff;}
+
+/* ---------- Panels / tables ---------- */
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:22px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.panel-head h3{font-size:16.5px;}
+table{width:100%;border-collapse:collapse;font-size:13.8px;}
+th{text-align:left;padding:10px 12px;color:var(--ink-soft);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid var(--border);}
+td{padding:11px 12px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+.table-wrap{overflow-x:auto;}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
+.badge-draft{background:#EEE;color:#555;}
+.badge-submitted{background:var(--warn-bg);color:var(--warn);}
+.badge-approved{background:#E4F0FE;color:#1B5AA8;}
+.badge-published{background:var(--success-bg);color:var(--success);}
+.badge-rejected{background:var(--danger-bg);color:var(--danger);}
+.icon-btn{background:none;border:none;color:var(--purple-700);font-size:16px;padding:4px 6px;border-radius:6px;}
+.icon-btn:hover{background:var(--purple-100);}
+.empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+.empty-state .big{font-size:38px;margin-bottom:10px;}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(46,22,80,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal-box{background:#fff;border-radius:14px;padding:26px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+.modal-box h3{margin-bottom:16px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+
+/* ---------- Toast ---------- */
+#toast-wrap{position:fixed;bottom:22px;right:22px;z-index:400;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--purple-900);color:#fff;padding:13px 18px;border-radius:10px;font-size:13.8px;box-shadow:0 10px 26px rgba(0,0,0,.25);max-width:320px;animation:slidein .2s ease;}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+@keyframes slidein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---------- Result entry grid ---------- */
+.score-input{width:64px;padding:7px;text-align:center;}
+.small-note{font-size:12px;color:var(--ink-soft);}
+.pill-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.pill-tab{padding:8px 16px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:13.5px;font-weight:600;color:var(--ink-soft);}
+.pill-tab.active{background:var(--purple-700);border-color:var(--purple-700);color:#fff;}
+
+/* ---------- Report card ---------- */
+.report-wrap{max-width:820px;margin:24px auto;background:#fff;}
+.report-card{border:3px solid var(--purple-700);border-radius:10px;padding:30px;}
+.rc-head{display:flex;align-items:center;gap:16px;border-bottom:2px solid var(--purple-700);padding-bottom:16px;margin-bottom:16px;}
+.rc-logo{width:64px;height:64px;border-radius:12px;background:var(--purple-700);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:26px;}
+.rc-head h2{font-size:20px;color:var(--purple-800);}
+.rc-head p{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+.rc-title{text-align:center;font-weight:700;color:var(--purple-700);letter-spacing:.05em;text-transform:uppercase;margin:14px 0;font-size:13px;}
+.rc-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 20px;font-size:13px;margin-bottom:18px;}
+.rc-info-grid div b{color:var(--ink-soft);font-weight:600;}
+.rc-table th,.rc-table td{border:1px solid var(--border);padding:7px 8px;font-size:12.5px;}
+.rc-remarks{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.rc-remark-box{border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;}
+.rc-remark-box b{display:block;color:var(--purple-700);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+.rc-sign-row{display:flex;justify-content:space-between;margin-top:30px;font-size:12px;}
+.rc-sign-row div{text-align:center;width:150px;border-top:1px solid var(--ink);padding-top:6px;}
+.rc-qr{display:flex;justify-content:center;margin-top:16px;}
+.rc-section-title{font-weight:700;color:var(--purple-700);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px;}
+.rc-skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px;}
+.rc-skills-table td{padding:5px 8px;}
+.rc-skills-table td.rc-skill-name{color:var(--ink-soft);}
+.rc-skills-table td.rc-skill-grade{text-align:center;font-weight:700;color:var(--purple-700);width:40px;}
+.rc-meta-row{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:12.5px;color:var(--ink-soft);margin-top:10px;}
+.rc-meta-row b{color:var(--ink);}
+.rc-promo-box{margin-top:14px;border:2px dashed var(--purple-500);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--purple-800);text-align:center;}
+.page-break{page-break-after:always;}
+@media print{
+  .no-print{display:none !important;}
+  body{background:#fff;}
+  .report-wrap{margin:0;max-width:100%;}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .contact-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr;}
+  .field-row{grid-template-columns:1fr;}
+  .rc-info-grid{grid-template-columns:1fr 1fr;}
+  .rc-skills-grid{grid-template-columns:1fr;}
+}
+@media (max-width:760px){
+  .pub-links{position:fixed;top:64px;left:0;right:0;background:#fff;flex-direction:column;padding:16px 24px;border-bottom:1px solid var(--border);display:none;}
+  .pub-links.open{display:flex;}
+  .menu-toggle{display:block;}
+  .hero h1{font-size:32px;}
+  .sidebar{position:fixed;left:0;top:0;z-index:100;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .hamburger{display:block;}
+  .content{padding:18px 14px 50px;}
+  .grid-2{grid-template-columns:1fr;}
+}
+/* ============================================================
+   GLOBAL VISIBILITY + ACCESSIBILITY IMPROVEMENTS
+   Makes text, buttons, inputs and actions fully readable
+   ============================================================ */
+
+/* ---------- Global text visibility ---------- */
+
+button,
+input,
+select,
+textarea,
+label,
+a,
+span,
+td,
+th {
+  visibility: visible !important;
+}
+
+/* Prevent important text from becoming transparent */
+button,
+input,
+select,
+textarea,
+.btn,
+.action-btn,
+.icon-btn,
+.side-link,
+.topbar a,
+.panel a {
+  opacity: 1 !important;
+}
+
+
+/* ---------- Inputs, selects and textareas ---------- */
+
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 100%;
+  color: var(--ink) !important;
+  background-color: #ffffff !important;
+  border: 1.5px solid var(--border) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  /* Allow text to remain visible */
+  text-overflow: clip;
+  overflow: visible;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  color: var(--ink) !important;
+  background-color: #ffffff !important;
+  border-color: var(--purple-500) !important;
+  outline: none;
+}
+
+/* Placeholder text */
+input::placeholder,
+textarea::placeholder {
+  color: #5b5468 !important;
+  opacity: 1 !important;
+}
+
+/* Disabled fields should still be readable */
+input:disabled,
+select:disabled,
+textarea:disabled {
+  color: var(--ink) !important;
+  background-color: #f5f2f8 !important;
+  opacity: 0.85 !important;
+  cursor: not-allowed;
+}
+
+/* Make selected dropdown text readable */
+select,
+select option {
+  color: var(--ink) !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Make long textarea content visible */
+textarea {
+  min-height: 90px;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   BUTTON VISIBILITY
+   ============================================================ */
+
+button,
+.btn,
+.action-btn,
+.icon-btn {
+  visibility: visible !important;
+  opacity: 1 !important;
+  max-width: 100%;
+}
+
+/* Normal buttons can wrap text instead of hiding it */
+.btn,
+.action-btn {
+  min-height: 38px;
+  height: auto;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Keep buttons properly centered */
+.btn,
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+/* Disabled buttons remain readable */
+button:disabled,
+.btn:disabled,
+.action-btn:disabled {
+  opacity: 0.7 !important;
+  color: inherit !important;
+}
+
+/* Icon buttons should not hide text if text exists */
+.icon-btn {
+  width: auto;
+  min-width: 32px;
+  min-height: 32px;
+  height: auto;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+
+/* ============================================================
+   TABLE VISIBILITY
+   ============================================================ */
+
+.table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Allow table to use the space it needs */
+table {
+  width: 100%;
+  min-width: 700px;
+}
+
+/* Make headings readable */
+th {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Allow normal table content to wrap */
+td {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  vertical-align: middle;
+}
+
+/* Keep action buttons visible */
+th:last-child,
+td:last-child {
+  min-width: 120px;
+  white-space: normal !important;
+}
+
+/* If there are several buttons inside Actions */
+td:last-child .btn,
+td:last-child .action-btn,
+td:last-child button {
+  margin: 3px 2px;
+}
+
+
+/* ============================================================
+   STAFF, USERS AND ASSIGNMENT ACTIONS
+   ============================================================ */
+
+/* Prevent Actions column text from being hidden */
+.actions,
+.action-cell,
+td.actions,
+td.action-cell {
+  min-width: 130px;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Make text-only action links visible */
+.actions a,
+.action-cell a,
+td.actions a,
+td.action-cell a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--purple-700) !important;
+  font-weight: 600;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Improve hover visibility */
+.actions a:hover,
+.action-cell a:hover,
+td.actions a:hover,
+td.action-cell a:hover {
+  background: var(--purple-100);
+  border-radius: 6px;
+}
+
+
+/* ============================================================
+   LABELS AND FORM FIELDS
+   ============================================================ */
+
+label {
+  color: var(--ink-soft) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.field,
+.form-grid,
+.field-row {
+  min-width: 0;
+}
+
+/* Prevent long labels or values from disappearing */
+.field,
+.field label,
+.field span,
+.field p {
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   SIDEBAR AND NAVIGATION
+   ============================================================ */
+
+.side-link,
+.pub-links a,
+.topbar a {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.side-link {
+  min-height: 42px;
+}
+
+.side-link span,
+.side-link:not(:empty) {
+  visibility: visible !important;
+}
+
+
+/* ============================================================
+   BADGES AND STATUS TEXT
+   ============================================================ */
+
+.badge,
+.badge-draft,
+.badge-submitted,
+.badge-approved,
+.badge-published,
+.badge-rejected {
+  visibility: visible !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   PANEL HEADS AND CONTROL AREAS
+   ============================================================ */
+
+.panel-head {
+  min-width: 0;
+}
+
+.panel-head h3,
+.panel-head h2,
+.panel-head p,
+.panel-head span {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+/* Prevent buttons from being squeezed out */
+.panel-head > * {
+  max-width: 100%;
+}
+
+
+/* ============================================================
+   RESULT ENTRY TABLE
+   ============================================================ */
+
+.score-input {
+  width: 72px !important;
+  min-width: 64px;
+  max-width: 100%;
+  text-align: center;
+  color: var(--ink) !important;
+  background: #ffffff !important;
+}
+
+.small-note,
+.info-box {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   MOBILE AND SMALL SCREEN IMPROVEMENTS
+   ============================================================ */
+
+@media (max-width: 980px) {
+
+  .content {
+    min-width: 0;
+  }
+
+  .panel,
+  .card,
+  .stat-card {
+    max-width: 100%;
+  }
+
+  .panel-head {
+    align-items: flex-start;
+  }
+}
+
+
+@media (max-width: 760px) {
+
+  /* Allow controls to stack properly */
+  .panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-head .btn,
+  .panel-head button,
+  .panel-head select,
+  .panel-head input {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Keep all action text available */
+  .action-btn,
+  td:last-child .btn,
+  td:last-child button {
+    width: auto;
+    max-width: 100%;
+    white-space: normal !important;
+  }
+
+  /* Tables remain scrollable instead of cutting text */
+  .table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  table {
+    min-width: 650px;
+  }
+
+  td,
+  th {
+    padding: 10px 8px;
+  }
+
+  /* Forms stack safely */
+  .form-grid,
+  .field-row,
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Sidebar text remains readable */
+  .side-link {
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+}
+
+
+/* ============================================================
+   FINAL SAFETY RULE
+   Prevent common CSS clipping of important interface text
+   ============================================================ */
+
+button,
+.btn,
+.action-btn,
+input,
+select,
+textarea,
+label,
+.side-link,
+.badge,
+td,
+th {
+  text-overflow: clip !important;
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-wrap"></div>
+
+<script>
+/* =========================================================================
+   PURITY KIDS ACADEMY — RESULT MANAGEMENT PORTAL
+   Single-file app: HTML + CSS + vanilla JS + Firebase (Auth + Firestore)
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------
+   1. FIREBASE CONFIG  —  paste your config from Firebase Console here.
+      Project Settings → General → Your apps → SDK setup and config
+   --------------------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCLKtR9pVs127xcSBhmXL9JSRpd41C6zfg",
+  authDomain: "purity-kids-academy-portal.firebaseapp.com",
+  projectId: "purity-kids-academy-portal",
+  storageBucket: "purity-kids-academy-portal.firebasestorage.app",
+  messagingSenderId: "41505719380",
+  appId: "1:41505719380:web:e30912eb401d09965b99c1"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+// secondary app instance — lets an admin create staff accounts
+// without being signed out of their own session
+const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = secondaryApp.auth();
+console.log("Firebase connected successfully!");
+
+const SCHOOL = {
+  name: "PURITY KIDS ACADEMY",
+  motto: "PURIFYING KIDS FOR FUTURE",
+  address: "Along Imafon Community Market, Besides Geofas Table Water, Imafon, Akure, Ondo State.",
+  phones: ["09064798049", "08063252646"],
+  anthem: `Purity Kids Academy, our pride and joy,
+Molding every girl and every boy.
+With knowledge and virtue we shall rise,
+Purifying kids, oh so wise.
+
+Chorus:
+Onward Purity, our banner high,
+Under Ondo's bright and open sky.
+Purifying kids for future we stand,
+Together in learning, hand in hand.`,
+  nationalAnthem: `Arise, O compatriots, Nigeria's call obey
+To serve our fatherland
+With love and strength and faith
+The labour of our heroes past
+Shall never be in vain
+To serve with heart and might
+One nation bound in freedom, peace and unity.
+
+O God of creation, direct our noble cause
+Guide our leaders right
+Help our youth the truth to know
+In love and honesty to grow
+And living just and true
+Great lofty heights attain
+To build a nation where peace and justice shall reign.`,
+  pledge: `I pledge to Nigeria my country,
+To be faithful, loyal and honest,
+To serve Nigeria with all my strength,
+To defend her unity,
+And uphold her honour and glory,
+So help me God.`
+};
+
+/* ---------------------------------------------------------------------
+   2. GLOBAL STATE
+   --------------------------------------------------------------------- */
+const state = {
+  user: null,        // firebase auth user
+  profile: null,      // users/{uid} firestore doc
+  settings: null,      // schoolSettings/main
+  currentSession: null,
+  currentTerm: "first",
+  loading: true
+};
+
+const TERMS = [
+  {id:"first", label:"First Term"},
+  {id:"second", label:"Second Term"},
+  {id:"third", label:"Third Term"}
+];
+const SECTIONS = ["NURSERY","PRIMARY","JSS","SSS"];
+
+/* ---------------------------------------------------------------------
+   3. HELPERS
+   --------------------------------------------------------------------- */
+function $(sel, root){ return (root||document).querySelector(sel); }
+function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+function h(strings, ...vals){ return strings.map((s,i)=> s + (vals[i]!==undefined? vals[i]:"")).join(""); }
+function esc(str){ return (str===undefined||str===null) ? "" : String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(msg, type){
+  const wrap = $("#toast-wrap");
+  const el = document.createElement("div");
+  el.className = "toast" + (type ? " "+type : "");
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transition="opacity .3s"; setTimeout(()=>el.remove(),300); }, 3400);
+}
+function genPin(){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const seg = ()=> Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
+  return `PKA-${seg()}-${seg()}`;
+}
+function genAdmissionNo(section){
+  const prefix = {NURSERY:"PKA/NUR",PRIMARY:"PKA/PRI",JSS:"PKA/JSS",SSS:"PKA/SSS"}[section] || "PKA/STD";
+  return `${prefix}/${new Date().getFullYear()}/${Math.floor(1000+Math.random()*9000)}`;
+}
+function fmtDate(ts){
+  if(!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+}
+function nowStamp(){ return firebase.firestore.FieldValue.serverTimestamp(); }
+
+async function logAudit(action, details){
+  try{
+    await db.collection("auditLogs").add({
+      action, details: details || {},
+      uid: state.user ? state.user.uid : "public",
+      userName: state.profile ? state.profile.name : "Public",
+      role: state.profile ? state.profile.role : "public",
+      at: nowStamp()
+    });
+  }catch(e){ console.warn("audit log failed", e); }
+}
+
+function computeGradeFromScore(score, gradingScale){
+  if(!gradingScale || !gradingScale.length) return {grade:"-", remark:"-"};
+  const found = gradingScale.find(g => score >= g.min && score <= g.max);
+  return found ? {grade:found.grade, remark:found.remark} : {grade:"-", remark:"-"};
+}
+
+function openModal(title, bodyHtml, onMount){
+  closeModal();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "active-modal";
+  overlay.innerHTML = `<div class="modal-box"><h3>${esc(title)}</h3><div id="modal-body">${bodyHtml}</div></div>`;
+  overlay.addEventListener("click", e=>{ if(e.target===overlay) closeModal(); });
+  document.body.appendChild(overlay);
+  if(onMount) onMount($("#modal-body", overlay));
+}
+function closeModal(){ const m = $("#active-modal"); if(m) m.remove(); }
+
+function confirmDialog(message, confirmLabel){
+  return new Promise(resolve=>{
+    openModal("Please confirm", `
+      <p style="color:var(--ink-soft);font-size:14.5px;">${esc(message)}</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cd-cancel">Cancel</button>
+        <button class="btn btn-danger" id="cd-ok">${esc(confirmLabel||"Confirm")}</button>
+      </div>`, body=>{
+        $("#cd-cancel", body).onclick = ()=>{ closeModal(); resolve(false); };
+        $("#cd-ok", body).onclick = ()=>{ closeModal(); resolve(true); };
+      });
+  });
+}
+
+/* Small prompt-style modal used for capturing a short text reason */
+function promptDialog(message, confirmLabel){
+  return new Promise(resolve=>{
+    openModal("Please provide a reason", `
+      <p style="color:var(--ink-soft);font-size:14.5px;">${esc(message)}</p>
+      <div class="field"><textarea id="pd-input" rows="3" placeholder="Type here…"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="pd-cancel">Cancel</button>
+        <button class="btn btn-danger" id="pd-ok">${esc(confirmLabel||"Confirm")}</button>
+      </div>`, body=>{
+        $("#pd-cancel", body).onclick = ()=>{ closeModal(); resolve(null); };
+        $("#pd-ok", body).onclick = ()=>{ const v = $("#pd-input",body).value.trim(); closeModal(); resolve(v); };
+      });
+  });
+}
+
+/* ---------------------------------------------------------------------
+   4. ROUTER
+   --------------------------------------------------------------------- */
+function navigate(hash){ location.hash = hash; }
+window.addEventListener("hashchange", render);
+
+async function render(){
+  const app = $("#app");
+  const hash = location.hash || "#/";
+
+ // ---- Public routes (no login required) ----
+if (
+  hash === "#/" ||
+  hash === "#" ||
+  hash.startsWith("#/about") ||
+  hash.startsWith("#/academics") ||
+  hash.startsWith("#/contact")
+) {
+  return renderLanding(app);
+}
+
+if (hash.startsWith("#/check-result")) {
+  return renderResultChecker(app);
+}
+
+if (hash.startsWith("#/verify")) {
+  return renderVerify(app);
+}
+
+if (hash.startsWith("#/login")) {
+  return renderLogin(app);
+}
+
+// ---- Protected portal routes require login ----
+if (!state.user) {
+  navigate("#/login");
+  return;
+}
+
+if (!state.profile) {
+  app.innerHTML = loadingScreen();
+  return;
+}
+
+return renderApp(app, hash);
+}
+
+function loadingScreen(){
+  return `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--purple-700);font-family:var(--font-display);font-weight:700;">Loading Purity Kids Academy Portal…</div>`;
+}
+
+/* ---------------------------------------------------------------------
+   5. LANDING PAGE
+   --------------------------------------------------------------------- */
+function publicHeader(active){
+  return `
+  <header class="pub-header">
+    <div class="container pub-nav">
+      <a href="#/" class="brand"><span class="logo-badge">P</span> PURITY KIDS ACADEMY</a>
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <nav class="pub-links" id="pub-links">
+        <a href="#/">Home</a>
+        <a href="#/about">About</a>
+        <a href="#/academics">Academics</a>
+        <a href="#/check-result">Result Checker</a>
+        <a href="#/contact">Contact</a>
+        <a href="#/login" class="btn btn-primary btn-sm">Login</a>
+      </nav>
+    </div>
+  </header>`;
+}
+function publicFooter(){
+  return `
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="brand" style="color:#fff;margin-bottom:12px;"><span class="logo-badge">P</span>PURITY KIDS ACADEMY</div>
+          <p style="font-size:13.5px;max-width:320px;">${esc(SCHOOL.motto)}</p>
+          <p style="font-size:13px;margin-top:14px;">${esc(SCHOOL.address)}</p>
+          <p style="font-size:13px;">${SCHOOL.phones.join(" · ")}</p>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <a href="#/check-result">Result Checker</a>
+          <a href="#/login">Login to Portal</a>
+          <a href="#/academics">Academics</a>
+        </div>
+        <div>
+          <h4>Sections</h4>
+          <a href="#/academics">Nursery</a>
+          <a href="#/academics">Primary</a>
+          <a href="#/academics">Junior Secondary</a>
+          <a href="#/academics">Senior Secondary</a>
+        </div>
+      </div>
+      <div class="footer-bottom">© ${new Date().getFullYear()} Purity Kids Academy. All rights reserved.</div>
+    </div>
+  </footer>`;
+}
+
+function renderLanding(app){
+  app.innerHTML = `
+  ${publicHeader()}
+  <section class="hero">
+    <div class="container hero-inner">
+      <span class="eyebrow">Result Management Portal</span>
+      <h1>PURITY KIDS ACADEMY</h1>
+      <div class="motto">"${esc(SCHOOL.motto)}"</div>
+      <p class="lead">A caring academic home for Nursery, Primary, Junior Secondary and Senior Secondary pupils in Akure, Ondo State — nurturing character and knowledge in equal measure.</p>
+      <div class="hero-ctas">
+        <a href="#/check-result" class="btn btn-white">Check Result</a>
+        <a href="#/login" class="btn btn-outline-light">Login to Portal</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-head">
+        <span class="tag">About Us</span>
+        <h2>Four stages, one standard of care</h2>
+        <p>From a child's first day in Nursery to their final year in Senior Secondary, Purity Kids Academy builds a consistent foundation of discipline, curiosity and character.</p>
+      </div>
+      <div class="grid-4" id="academics">
+        <div class="card acad-card"><div class="icon">N</div><h3>Nursery</h3><p>Early learning through play, phonics and psychomotor development.</p></div>
+        <div class="card acad-card"><div class="icon">P</div><h3>Primary</h3><p>Primary 1–6 building literacy, numeracy and character.</p></div>
+        <div class="card acad-card"><div class="icon">J</div><h3>Junior Secondary</h3><p>JSS 1–3 preparing pupils for BECE and beyond.</p></div>
+        <div class="card acad-card"><div class="icon">S</div><h3>Senior Secondary</h3><p>SS 1–3 across Science, Arts and Commercial tracks.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="container grid-2">
+      <div class="card">
+        <span class="tag">School Anthem</span>
+        <h2 style="font-size:18px;margin:8px 0 12px;">Our Song</h2>
+        <div class="anthem-box">${esc(SCHOOL.anthem)}</div>
+      </div>
+      <div class="card">
+        <span class="tag">National Pledge</span>
+        <h2 style="font-size:18px;margin:8px 0 12px;">I Pledge to Nigeria</h2>
+        <div class="anthem-box">${esc(SCHOOL.pledge)}</div>
+      </div>
+    </div>
+    <div class="container" style="margin-top:20px;">
+      <div class="card">
+        <span class="tag">National Anthem</span>
+        <h2 style="font-size:18px;margin:8px 0 12px;">Arise, O Compatriots</h2>
+        <div class="anthem-box">${esc(SCHOOL.nationalAnthem)}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="contact">
+    <div class="container">
+      <div class="section-head"><span class="tag">Get in Touch</span><h2>Contact the school office</h2></div>
+      <div class="contact-grid">
+        <div>
+          <div class="contact-item"><div class="ic">📍</div><div><b>Address</b><br><span style="color:var(--ink-soft);font-size:14px;">${esc(SCHOOL.address)}</span></div></div>
+          <div class="contact-item"><div class="ic">📞</div><div><b>Telephone</b><br><span style="color:var(--ink-soft);font-size:14px;">${SCHOOL.phones.join(" · ")}</span></div></div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <h3 style="margin-bottom:10px;">Check your child's result</h3>
+          <p style="color:var(--ink-soft);font-size:13.8px;margin-bottom:18px;">Enter the admission number and PIN issued by the school.</p>
+          <a href="#/check-result" class="btn btn-primary btn-block">Check Result</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  ${publicFooter()}
+  `;
+  wirePublicHeader();
+}
+
+function wirePublicHeader(){
+  const toggle = $("#menu-toggle");
+  if(toggle){ toggle.onclick = ()=> $("#pub-links").classList.toggle("open"); }
+}
+
+/* ---------------------------------------------------------------------
+   6. PUBLIC RESULT CHECKER
+   --------------------------------------------------------------------- */
+function renderResultChecker(app){
+  app.innerHTML = `
+  ${publicHeader()}
+  <section class="section" style="min-height:60vh;">
+    <div class="container" style="max-width:480px;">
+      <div class="section-head"><span class="tag">Result Checker</span><h2>Check Your Result</h2><p>Enter the details exactly as issued by the school office.</p></div>
+      <div class="card" id="rc-form-wrap">
+        <div id="rc-msg"></div>
+        <form id="rc-form">
+          <div class="field"><label>Admission Number</label><input required id="rc-adm" placeholder="e.g. PKA/JSS/2026/1042"></div>
+          <div class="field"><label>Result PIN</label><input required id="rc-pin" placeholder="e.g. PKA-8F7D-29KQ" style="text-transform:uppercase;"></div>
+          <div class="field-row">
+            <div class="field"><label>Academic Session</label><input required id="rc-session" placeholder="e.g. 2025/2026"></div>
+            <div class="field"><label>Term</label>
+              <select id="rc-term">
+                <option value="first">First Term</option>
+                <option value="second">Second Term</option>
+                <option value="third">Third Term</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="rc-submit">Check Result</button>
+        </form>
+      </div>
+      <div id="rc-result"></div>
+    </div>
+  </section>
+  ${publicFooter()}
+  `;
+  wirePublicHeader();
+  $("#rc-form").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const adm = $("#rc-adm").value.trim();
+    const pin = $("#rc-pin").value.trim().toUpperCase();
+    const session = $("#rc-session").value.trim();
+    const term = $("#rc-term").value;
+    const btn = $("#rc-submit");
+    const msg = $("#rc-msg");
+    msg.innerHTML = "";
+    if(!adm || !pin || !session){ msg.innerHTML = `<div class="err-msg">Please fill in all fields.</div>`; return; }
+    btn.disabled = true; btn.textContent = "Checking…";
+    try{
+      const docId = `${adm}_${pin}_${session}_${term}`.replace(/\s+/g,"");
+      const snap = await db.collection("publicResults").doc(docId).get();
+      if(!snap.exists){
+        msg.innerHTML = `<div class="err-msg">No published result found for these details. Check your Admission Number, PIN, Session and Term, or contact the school office.</div>`;
+        $("#rc-result").innerHTML = "";
+      } else {
+        await logAudit("public_result_check", {adm, session, term});
+        $("#rc-result").innerHTML = renderReportCardHTML(snap.data(), true);
+        setTimeout(()=> wireReportCardButtons(snap.data()), 30);
+        $("#rc-result").scrollIntoView({behavior:"smooth"});
+      }
+    }catch(err){
+      msg.innerHTML = `<div class="err-msg">Something went wrong: ${esc(err.message)}</div>`;
+    }
+    btn.disabled = false; btn.textContent = "Check Result";
+  });
+}
+
+/* QR verification landing (scanned from a printed report) */
+async function renderVerify(app){
+  const params = new URLSearchParams(location.hash.split("?")[1] || "");
+  const vId = params.get("id");
+  app.innerHTML = `${publicHeader()}<section class="section" style="min-height:50vh;"><div class="container" style="max-width:480px;"><div class="card" id="verify-box"><p>Verifying…</p></div></div></section>${publicFooter()}`;
+  wirePublicHeader();
+  const box = $("#verify-box");
+  if(!vId){ box.innerHTML = `<div class="err-msg">No verification code supplied.</div>`; return; }
+  try{
+    const snap = await db.collection("publicResults").doc(vId).get();
+    if(!snap.exists){ box.innerHTML = `<div class="err-msg">This result could not be verified. It may not exist or has not been published.</div>`; return; }
+    const d = snap.data();
+    box.innerHTML = `
+      <h3 style="margin-bottom:14px;">Purity Kids Academy — Result Verification</h3>
+      <div style="font-size:14px;line-height:2;">
+        <div><b>Student:</b> ${esc(d.studentName)}</div>
+        <div><b>Admission No:</b> ${esc(d.admissionNo)}</div>
+        <div><b>Class:</b> ${esc(d.className)}</div>
+        <div><b>Session:</b> ${esc(d.sessionName)}</div>
+        <div><b>Term:</b> ${esc(termLabel(d.term))}</div>
+        <div><b>Status:</b> <span class="badge badge-published">Published &amp; Verified</span></div>
+        <div><b>Verification No:</b> ${esc(vId)}</div>
+      </div>`;
+  }catch(e){ box.innerHTML = `<div class="err-msg">${esc(e.message)}</div>`; }
+}
+
+function termLabel(t){ const f = TERMS.find(x=>x.id===t); return f? f.label : t; }
+
+/* =========================================================================
+   7. LOGIN
+   ========================================================================= */
+function renderLogin(app){
+  app.innerHTML = `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand"><span class="logo-badge">P</span></div>
+      <h2>Portal Login</h2>
+      <p class="sub">Purity Kids Academy — Staff, Parent &amp; Student sign in</p>
+      <div id="login-msg"></div>
+      <form id="login-form">
+        <div class="field"><label>Email Address</label><input required type="email" id="li-email" placeholder="you@puritykidsacademy.com"></div>
+        <div class="field"><label>Password</label><input required type="password" id="li-pass" placeholder="••••••••"></div>
+        <button class="btn btn-primary btn-block" type="submit" id="li-btn">Login</button>
+      </form>
+      <p style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px;">
+        <a href="#/check-result">Check a result instead →</a>
+      </p>
+      <p style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:6px;"><a href="#/">← Back to homepage</a></p>
+    </div>
+  </div>`;
+  $("#login-form").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const btn = $("#li-btn"); const msg = $("#login-msg");
+    msg.innerHTML = ""; btn.disabled = true; btn.textContent = "Signing in…";
+    try{
+      await auth.signInWithEmailAndPassword($("#li-email").value.trim(), $("#li-pass").value);
+      navigate("#/dashboard");
+    }catch(err){
+      msg.innerHTML = `<div class="err-msg">${esc(friendlyAuthError(err))}</div>`;
+    }
+    btn.disabled = false; btn.textContent = "Login";
+  });
+}
+function friendlyAuthError(err){
+  const map = {
+    "auth/user-not-found":"No account found with that email.",
+    "auth/wrong-password":"Incorrect password. Please try again.",
+    "auth/invalid-credential":"Incorrect email or password.",
+    "auth/too-many-requests":"Too many attempts. Please wait a moment and try again.",
+    "auth/invalid-email":"Please enter a valid email address."
+  };
+  return map[err.code] || err.message;
+}
+
+/* =========================================================================
+   8. APP SHELL (authenticated area)
+   ========================================================================= */
+const NAV_BY_ROLE = {
+  admin: [
+    {hash:"#/dashboard", label:"Dashboard", icon:"🏠"},
+    {hash:"#/students", label:"Students", icon:"🎓"},
+    {hash:"#/staff", label:"Staff &amp; Users", icon:"👥"},
+    {hash:"#/classes", label:"Classes", icon:"🏫"},
+    {hash:"#/subjects", label:"Subjects", icon:"📚"},
+    {hash:"#/sessions", label:"Sessions &amp; Terms", icon:"📅"},
+    {hash:"#/grading", label:"Grading Scale", icon:"🏆"},
+    {hash:"#/enter-results", label:"Enter Results", icon:"✏️"},
+    {hash:"#/results-overview", label:"Results Overview", icon:"📝"},
+    {hash:"#/approve-results", label:"Approve &amp; Publish", icon:"✅"},
+    {hash:"#/pins", label:"Result PINs", icon:"🔑"},
+    {hash:"#/download-results", label:"Download Results", icon:"⬇️"},
+    {hash:"#/audit", label:"Audit Log", icon:"🗂️"},
+    {hash:"#/settings", label:"School Settings", icon:"⚙️"},
+  ],
+  principal: [
+    {hash:"#/dashboard", label:"Dashboard", icon:"🏠"},
+    {hash:"#/approve-results", label:"Approve &amp; Publish", icon:"✅"},
+    {hash:"#/students", label:"Students", icon:"🎓"},
+    {hash:"#/results-overview", label:"Results Overview", icon:"📝"},
+    {hash:"#/download-results", label:"Download Results", icon:"⬇️"},
+  ],
+  teacher: [
+    {hash:"#/dashboard", label:"Dashboard", icon:"🏠"},
+    {hash:"#/enter-results", label:"Enter Results", icon:"✏️"},
+    {hash:"#/my-students", label:"My Students", icon:"🎓"},
+  ],
+  parent: [
+    {hash:"#/dashboard", label:"My Children", icon:"🏠"},
+  ],
+  student: [
+    {hash:"#/dashboard", label:"My Results", icon:"🏠"},
+  ]
+};
+
+/* Roles allowed to access the Audit Log — superadmin-equivalent only.
+   In this system "admin" is the top-level/superadmin role, so Audit Log
+   is restricted to admin and hidden/blocked for everyone else (including
+   principal). */
+const AUDIT_LOG_ROLES = ["admin"];
+
+/* Roles allowed to bulk-download results (all / by class / individual) */
+const DOWNLOAD_RESULTS_ROLES = ["admin", "principal"];
+
+async function renderApp(app, hash){
+  const role = state.profile.role;
+  const navItems = [...(NAV_BY_ROLE[role] || NAV_BY_ROLE.parent)];
+
+  // A teacher who is also a Class Teacher gets an extra full-access nav
+  // item for their own class (see feature note in renderClassOverview).
+  if(role === "teacher" && state.profile.classTeacherOf){
+    navItems.splice(1, 0, {hash:"#/class-overview", label:"My Class (Full Access)", icon:"🏫"});
+  }
+
+  app.innerHTML = `
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a href="#/dashboard" class="brand"><span class="logo-badge">P</span> Purity Kids Academy</a>
+      <div class="side-role">${esc(role)} portal</div>
+      <nav class="side-links">
+        ${navItems.map(n => `<a class="side-link ${hash.startsWith(n.hash)?'active':''}" href="${n.hash}">${n.icon} <span>${n.label}</span></a>`).join("")}
+      </nav>
+      <div class="side-foot">
+        <div class="side-user">${esc(state.profile.name)}<br>${esc(state.user.email)}</div>
+        <button class="btn btn-outline-light btn-sm btn-block" id="logout-btn">Logout</button>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <a href="#/" class="btn btn-ghost btn-sm">View Public Site</a>
+      </div>
+      <div class="content" id="content"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>`;
+
+  $("#logout-btn").onclick = async ()=>{ await auth.signOut(); navigate("#/"); };
+  $("#hamburger").onclick = ()=> $("#sidebar").classList.toggle("open");
+  $all(".side-link").forEach(l=> l.addEventListener("click", ()=> $("#sidebar").classList.remove("open")));
+
+  const route = hash.split("?")[0];
+
+  // Guard the Audit Log route server-side (in-app) too — not just the nav
+  // link — so a principal (or anyone else) can't reach it by typing the
+  // URL/hash directly.
+  if(route.startsWith("#/audit") && !AUDIT_LOG_ROLES.includes(role)){
+    $("#page-title").textContent = "Access Restricted";
+    $("#content").innerHTML = `<div class="empty-state"><div class="big">🔒</div>The Audit Log is restricted to administrators only.</div>`;
+    return;
+  }
+
+  if(route.startsWith("#/download-results") && !DOWNLOAD_RESULTS_ROLES.includes(role)){
+    $("#page-title").textContent = "Access Restricted";
+    $("#content").innerHTML = `<div class="empty-state"><div class="big">🔒</div>Bulk result downloads are restricted to Admin and Principal.</div>`;
+    return;
+  }
+
+  if(route.startsWith("#/class-overview") && !(role==="teacher" && state.profile.classTeacherOf)){
+    $("#page-title").textContent = "Access Restricted";
+    $("#content").innerHTML = `<div class="empty-state"><div class="big">🔒</div>This page is only available to Class Teachers.</div>`;
+    return;
+  }
+
+  const routeMap = {
+    "#/dashboard": renderDashboard,
+    "#/students": renderStudents,
+    "#/staff": renderStaff,
+    "#/classes": renderClasses,
+    "#/subjects": renderSubjects,
+    "#/sessions": renderSessions,
+    "#/grading": renderGrading,
+    "#/results-overview": renderResultsOverview,
+    "#/approve-results": renderApproveResults,
+    "#/pins": renderPins,
+    "#/audit": renderAudit,
+    "#/settings": renderSettings,
+    "#/enter-results": renderEnterResults,
+    "#/my-students": renderMyStudents,
+    "#/class-overview": renderClassOverview,
+    "#/download-results": renderDownloadResults,
+  };
+  let fn = routeMap[route.split("/report")[0]] || null;
+  if(route.startsWith("#/report")) fn = renderReportCardRoute;
+  if(!fn) fn = renderDashboard;
+  $("#page-title").textContent = (navItems.find(n=>route.startsWith(n.hash))||{label:"Report Card"}).label.replace(/&amp;/g,"&");
+  try{
+    await fn($("#content"));
+  }catch(e){
+    console.error(e);
+    $("#content").innerHTML = `<div class="err-msg">Failed to load this page: ${esc(e.message)}</div>`;
+  }
+}
+
+/* ---- shared data fetchers ---- */
+async function fetchAll(col, orderField){
+  let q = db.collection(col);
+  const snap = await q.get();
+  let arr = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  if(orderField) arr.sort((a,b)=> (a[orderField]||"").localeCompare(b[orderField]||""));
+  return arr;
+}
+async function getGradingScale(){
+  const arr = await fetchAll("gradingScale");
+  arr.sort((a,b)=> b.min - a.min);
+  return arr;
+}
+async function getCurrentSession(){
+  const arr = await fetchAll("sessions");
+  return arr.find(s=>s.isCurrent) || arr[0] || null;
+}
+
+/* =========================================================================
+   9. DASHBOARD (role-aware)
+   ========================================================================= */
+async function renderDashboard(content){
+  const role = state.profile.role;
+  if(role === "admin" || role === "principal") return renderAdminDashboard(content, role);
+  if(role === "teacher") return renderTeacherDashboard(content);
+  if(role === "parent") return renderParentDashboard(content);
+  if(role === "student") return renderStudentDashboard(content);
+  content.innerHTML = `<div class="empty-state">No dashboard configured for this role yet.</div>`;
+}
+
+async function renderAdminDashboard(content, role){
+  content.innerHTML = `<div class="empty-state">Loading school statistics…</div>`;
+  const [students, teachersAndStaff, classes, results, session] = await Promise.all([
+    fetchAll("students"), fetchAll("users"), fetchAll("classes"), fetchAll("results"), getCurrentSession()
+  ]);
+  const bySection = s => students.filter(x=>x.section===s && x.status!=="archived").length;
+  const teacherCount = teachersAndStaff.filter(u=>u.role==="teacher").length;
+  const draft = results.filter(r=>r.status==="draft").length;
+  const submitted = results.filter(r=>r.status==="submitted").length;
+  const approved = results.filter(r=>r.status==="approved").length;
+  const published = results.filter(r=>r.status==="published").length;
+  const totals = results.filter(r=>typeof r.total === "number");
+  const avg = totals.length ? (totals.reduce((s,r)=>s+r.total,0)/totals.length).toFixed(1) : "—";
+  const passCount = totals.filter(r=>r.total>=45).length;
+  const passRate = totals.length ? ((passCount/totals.length)*100).toFixed(0)+"%" : "—";
+
+  content.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card accent"><div class="lbl">Total Students</div><div class="val">${students.filter(s=>s.status!=="archived").length}</div></div>
+      <div class="stat-card"><div class="lbl">Creche</div><div class="val">${bySection("CRECHE")}</div></div>
+      <div class="stat-card"><div class="lbl">Nursery</div><div class="val">${bySection("NURSERY")}</div></div>
+      <div class="stat-card"><div class="lbl">Primary</div><div class="val">${bySection("PRIMARY")}</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="lbl">JSS</div><div class="val">${bySection("JSS")}</div></div>
+      <div class="stat-card"><div class="lbl">SSS Students</div><div class="val">${bySection("SSS")}</div></div>
+      <div class="stat-card"><div class="lbl">Teachers</div><div class="val">${teacherCount}</div></div>
+      <div class="stat-card"><div class="lbl">Classes</div><div class="val">${classes.length}</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="lbl">Current Session</div><div class="val" style="font-size:16px;">${session? esc(session.name)+" · "+esc(termLabel(state.currentTerm)) : "Not set"}</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Result Workflow Status</h3></div>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat-card"><div class="lbl">Draft</div><div class="val">${draft}</div></div>
+        <div class="stat-card"><div class="lbl">Submitted</div><div class="val">${submitted}</div></div>
+        <div class="stat-card"><div class="lbl">Approved</div><div class="val">${approved}</div></div>
+        <div class="stat-card"><div class="lbl">Published</div><div class="val">${published}</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Performance Snapshot</h3></div>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat-card"><div class="lbl">Overall Average Score</div><div class="val">${avg}</div></div>
+        <div class="stat-card"><div class="lbl">Pass Rate (≥45)</div><div class="val">${passRate}</div></div>
+        <div class="stat-card"><div class="lbl">Total Classes</div><div class="val">${classes.length}</div></div>
+        <div class="stat-card"><div class="lbl">Subject Results Recorded</div><div class="val">${results.length}</div></div>
+      </div>
+    </div>
+
+    ${role==="admin" ? `
+    <div class="panel">
+      <div class="panel-head"><h3>Getting Started</h3></div>
+      <p class="small-note">First time setup order: School Settings → Sessions &amp; Terms → Classes → Subjects → Grading Scale → Students → Staff &amp; Users. Or click below to load sample demo data to explore the system.</p>
+      <button class="btn btn-outline btn-sm" id="seed-btn" style="margin-top:8px;">Load Demo Data</button>
+    </div>` : ""}
+  `;
+  if(role==="admin"){
+    $("#seed-btn").onclick = seedDemoData;
+  }
+}
+
+async function renderTeacherDashboard(content){
+  const assignments = state.profile.assignments || [];
+  const isClassTeacher = !!state.profile.classTeacherOf;
+  content.innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h3>Welcome, ${esc(state.profile.name)}</h3></div>
+      <p class="small-note">You are assigned to ${assignments.length} subject/class combination(s) as a <b>Subject Teacher</b>.${isClassTeacher? ` You are also the <b>Class Teacher</b> of ${esc(state.profile.classTeacherOfName||'a class')}, which gives you full access to that class's student data (all subjects, attendance and character reports) — see "My Class (Full Access)" in the menu.` : ""}</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>My Subject Assignments</h3><a href="#/enter-results" class="btn btn-primary btn-sm">Enter Results</a></div>
+      <div class="table-wrap"><table><thead><tr><th>Class</th><th>Subject</th></tr></thead><tbody>
+        ${assignments.length ? assignments.map(a=>`<tr><td>${esc(a.className)}</td><td>${esc(a.subjectName)}</td></tr>`).join("") : `<tr><td colspan="2" style="text-align:center;color:var(--ink-soft);">No assignments yet — ask the administrator to assign you a class and subject.</td></tr>`}
+      </tbody></table></div>
+    </div>`;
+}
+
+async function renderParentDashboard(content){
+  const ids = state.profile.linkedStudentIds || [];
+  if(!ids.length){ content.innerHTML = `<div class="empty-state"><div class="big">👨‍👩‍👧</div>No children linked to this account yet. Please contact the school office.</div>`; return; }
+  const kids = await Promise.all(ids.map(id=> db.collection("students").doc(id).get().then(d=>({id:d.id, ...d.data()}))));
+  content.innerHTML = `<div class="grid-2">${kids.map(k=>`
+    <div class="card">
+      <h3 style="margin-bottom:6px;">${esc(k.fullName)}</h3>
+      <p class="small-note">${esc(k.className)} · Admission No: ${esc(k.admissionNo)}</p>
+      <a class="btn btn-primary btn-sm" style="margin-top:14px;" href="#/report/${k.id}">View Latest Result</a>
+    </div>`).join("")}</div>`;
+}
+async function renderStudentDashboard(content){
+  const sid = state.profile.studentId;
+  if(!sid){ content.innerHTML = `<div class="empty-state">No student record linked to this account.</div>`; return; }
+  content.innerHTML = `<div class="card"><a class="btn btn-primary" href="#/report/${sid}">View My Latest Result</a></div>`;
+}
+
+/* =========================================================================
+   10. SETTINGS
+   ========================================================================= */
+async function renderSettings(content){
+  const snap = await db.collection("schoolSettings").doc("main").get();
+  const s = snap.exists ? snap.data() : {};
+  content.innerHTML = `
+  <div class="panel" style="max-width:640px;">
+    <div class="panel-head"><h3>School Settings</h3></div>
+    <div id="settings-msg"></div>
+    <form id="settings-form">
+      <div class="field-row">
+        <div class="field"><label>School Name</label><input id="st-name" value="${esc(s.name||SCHOOL.name)}"></div>
+        <div class="field"><label>Motto</label><input id="st-motto" value="${esc(s.motto||SCHOOL.motto)}"></div>
+      </div>
+      <div class="field"><label>Address</label><input id="st-address" value="${esc(s.address||SCHOOL.address)}"></div>
+      <div class="field-row">
+        <div class="field"><label>Telephone</label><input id="st-phone" value="${esc((s.phones||SCHOOL.phones).join(', '))}"></div>
+        <div class="field"><label>Email</label><input id="st-email" value="${esc(s.email||'')}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Principal / Headmaster Name</label><input id="st-principal" value="${esc(s.principalName||'')}"></div>
+        <div class="field"><label>Primary Colour</label><input type="color" id="st-color" value="${esc(s.brandColor||'#5B2A86')}"></div>
+      </div>
+      <button class="btn btn-primary" type="submit" id="st-save">Save Settings</button>
+    </form>
+  </div>`;
+  $("#settings-form").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const btn = $("#st-save"); btn.disabled = true; btn.textContent = "Saving…";
+    try{
+      await db.collection("schoolSettings").doc("main").set({
+        name: $("#st-name").value.trim(),
+        motto: $("#st-motto").value.trim(),
+        address: $("#st-address").value.trim(),
+        phones: $("#st-phone").value.split(",").map(x=>x.trim()).filter(Boolean),
+        email: $("#st-email").value.trim(),
+        principalName: $("#st-principal").value.trim(),
+        brandColor: $("#st-color").value,
+        updatedAt: nowStamp()
+      }, {merge:true});
+      await logAudit("update_settings", {});
+      toast("School settings saved", "success");
+    }catch(err){ toast(err.message, "error"); }
+    btn.disabled = false; btn.textContent = "Save Settings";
+  });
+}
+
+/* =========================================================================
+   11. SESSIONS & TERMS
+   ========================================================================= */
+async function renderSessions(content){
+  const sessionsRaw = await fetchAll("sessions");
+
+  // De-duplicate by name (case-insensitive, trimmed) so a session never
+  // displays more than once even if duplicate docs exist in Firestore.
+  // Prefer the current one, then the most recently created, and fold
+  // every other duplicate id into it so "Delete" can clear them all.
+  const groups = {};
+  sessionsRaw.forEach(s=>{
+    const key = (s.name||"").trim().toLowerCase();
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+  const sessions = Object.values(groups).map(group=>{
+    group.sort((a,b)=>{
+      if(!!a.isCurrent !== !!b.isCurrent) return a.isCurrent ? -1 : 1;
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
+    });
+    const primary = group[0];
+    return {...primary, duplicateIds: group.slice(1).map(g=>g.id)};
+  }).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Academic Sessions</h3><button class="btn btn-primary btn-sm" id="add-session">+ Add Session</button></div>
+    <p class="small-note" style="margin-bottom:12px;">Each session name is only shown once, even if duplicates exist behind the scenes. Use the 🗑️ button to permanently delete a session you no longer want (including any duplicate copies of it).</p>
+    <div class="table-wrap"><table><thead><tr><th>Session</th><th>Current Term</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${sessions.length ? sessions.map(s=>`
+      <tr>
+        <td><b>${esc(s.name)}</b>${s.duplicateIds.length ? ` <span class="badge badge-rejected" title="Duplicate entries found and merged in this view">${s.duplicateIds.length} duplicate${s.duplicateIds.length>1?'s':''} found</span>` : ''}</td>
+        <td>${termLabel(s.currentTerm||'first')}</td>
+        <td>${s.isCurrent? '<span class="badge badge-published">Current</span>' : '<span class="badge badge-draft">Archived</span>'}</td>
+        <td>
+          ${!s.isCurrent? `<button class="btn btn-outline btn-sm" data-set-current="${s.id}">Set as Current</button>`:''}
+          <button class="btn icon-btn" data-del-session="${s.id}" data-dupe-ids="${esc(s.duplicateIds.join(','))}" title="Delete this session">🗑️</button>
+        </td>
+      </tr>`).join("") : `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);">No sessions yet. Add each new academic year here.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+  $("#add-session").onclick = ()=>{
+    openModal("Add Academic Session", `
+      <div id="ns-msg"></div>
+      <div class="field"><label>Session (e.g. 2025/2026)</label><input id="ns-name" placeholder="2025/2026"></div>
+      <div class="field"><label>Current Term</label><select id="ns-term">${TERMS.map(t=>`<option value="${t.id}">${t.label}</option>`).join("")}</select></div>
+      <div class="modal-actions"><button class="btn btn-outline" id="ns-cancel">Cancel</button><button class="btn btn-primary" id="ns-save">Save</button></div>`,
+      body=>{
+        $("#ns-cancel", body).onclick = closeModal;
+        $("#ns-save", body).onclick = async ()=>{
+          const name = $("#ns-name", body).value.trim();
+          const msg = $("#ns-msg", body);
+          if(!name){ toast("Session name required","error"); return; }
+          // Prevent creating a duplicate — check (case-insensitive) against
+          // every existing session, not just the de-duplicated view.
+          const allSessions = await fetchAll("sessions");
+          const clash = allSessions.find(s => (s.name||"").trim().toLowerCase() === name.toLowerCase());
+          if(clash){
+            msg.innerHTML = `<div class="err-msg">A session named "${esc(clash.name)}" already exists. Use "Set as Current" on it instead of creating a duplicate, or delete it first from the list.</div>`;
+            return;
+          }
+          const batch = db.batch();
+          const existing = await db.collection("sessions").where("isCurrent","==",true).get();
+          existing.forEach(d=> batch.update(d.ref, {isCurrent:false}));
+          const ref = db.collection("sessions").doc();
+          batch.set(ref, {name, currentTerm: $("#ns-term",body).value, isCurrent:true, createdAt: nowStamp()});
+          await batch.commit();
+          await logAudit("create_session", {name});
+          closeModal(); toast("Session added", "success"); renderApp($("#app"), location.hash);
+        };
+      });
+  };
+  $all("[data-set-current]").forEach(btn=> btn.onclick = async ()=>{
+    const id = btn.dataset.setCurrent;
+    const batch = db.batch();
+    const existing = await db.collection("sessions").where("isCurrent","==",true).get();
+    existing.forEach(d=> batch.update(d.ref, {isCurrent:false}));
+    batch.update(db.collection("sessions").doc(id), {isCurrent:true});
+    await batch.commit();
+    toast("Current session updated", "success");
+    renderApp($("#app"), location.hash);
+  });
+  $all("[data-del-session]").forEach(btn=> btn.onclick = async ()=>{
+    const id = btn.dataset.delSession;
+    const dupeIds = (btn.dataset.dupeIds||"").split(",").filter(Boolean);
+    const confirmed = await confirmDialog(
+      dupeIds.length
+        ? `Delete this session and its ${dupeIds.length} duplicate ${dupeIds.length>1?'copies':'copy'}? This cannot be undone.`
+        : `Delete this session? This cannot be undone. If it was the current session, remember to set a new current session afterward.`,
+      "Delete"
+    );
+    if(!confirmed) return;
+    const batch = db.batch();
+    batch.delete(db.collection("sessions").doc(id));
+    dupeIds.forEach(did=> batch.delete(db.collection("sessions").doc(did)));
+    await batch.commit();
+    await logAudit("delete_session", {id, duplicatesRemoved: dupeIds.length});
+    toast("Session deleted", "success");
+    renderApp($("#app"), location.hash);
+  });
+}
+
+/* =========================================================================
+   12. CLASSES
+   ========================================================================= */
+async function renderClasses(content){
+  const classes = await fetchAll("classes", "name");
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Classes</h3><button class="btn btn-primary btn-sm" id="add-class">+ Add Class</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Class Name</th><th>Section</th><th>Actions</th></tr></thead><tbody>
+    ${classes.length ? classes.map(c=>`<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.section)}</td><td><button class="btn icon-btn" data-del-class="${c.id}">🗑️</button></td></tr>`).join("")
+      : `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);">No classes yet.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+  $("#add-class").onclick = ()=> openModal("Add Class", `
+    <div class="field"><label>Class Name (e.g. JSS 2A)</label><input id="nc-name" placeholder="JSS 2A"></div>
+    <div class="field"><label>Section</label><select id="nc-section">${SECTIONS.map(s=>`<option>${s}</option>`).join("")}</select></div>
+    <div class="modal-actions"><button class="btn btn-outline" id="nc-cancel">Cancel</button><button class="btn btn-primary" id="nc-save">Save</button></div>`,
+    body=>{
+      $("#nc-cancel",body).onclick = closeModal;
+      $("#nc-save",body).onclick = async ()=>{
+        const name = $("#nc-name",body).value.trim();
+        if(!name){ toast("Class name required","error"); return; }
+        await db.collection("classes").add({name, section: $("#nc-section",body).value, createdAt: nowStamp()});
+        await logAudit("create_class", {name});
+        closeModal(); toast("Class added","success"); renderApp($("#app"), location.hash);
+      };
+    });
+  $all("[data-del-class]").forEach(b=> b.onclick = async ()=>{
+    if(await confirmDialog("Delete this class? Existing students keep their class label but the class won't appear in dropdowns.", "Delete")){
+      await db.collection("classes").doc(b.dataset.delClass).delete();
+      toast("Class removed","success"); renderApp($("#app"), location.hash);
+    }
+  });
+}
+
+/* =========================================================================
+   13. SUBJECTS
+   ========================================================================= */
+async function renderSubjects(content){
+  const [subjects, classes] = await Promise.all([
+    fetchAll("subjects", "name"),
+    fetchAll("classes", "name")
+  ]);
+
+  content.innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Subjects</h3>
+        <button class="btn btn-primary btn-sm" id="add-subject">
+          + Add Subject
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Assigned Classes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${
+              subjects.length
+                ? subjects.map(s => `
+                    <tr>
+                      <td>
+                        <b>${esc(s.name)}</b>
+                      </td>
+
+                      <td>
+                        ${
+                          (s.classIds || [])
+                            .map(id => {
+                              const c = classes.find(x => x.id === id);
+                              return c ? esc(c.name) : "";
+                            })
+                            .filter(Boolean)
+                            .join(", ") || "—"
+                        }
+                      </td>
+
+                      <td>
+                        <button
+                          class="btn btn-outline btn-sm"
+                          data-assign="${s.id}"
+                        >
+                          Assign Classes
+                        </button>
+
+                        <button
+                          class="btn icon-btn"
+                          data-del-subj="${s.id}"
+                          title="Delete Subject"
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  `).join("")
+                : `
+                    <tr>
+                      <td colspan="3" style="text-align:center;color:var(--ink-soft);">
+                        No subjects yet.
+                      </td>
+                    </tr>
+                  `
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+
+  /* ===============================
+     ADD SUBJECT
+  =============================== */
+
+  $("#add-subject").onclick = () =>
+    openModal(
+      "Add Subject",
+      `
+        <div class="field">
+          <label>Subject Name</label>
+
+          <input
+            id="ns-subj"
+            placeholder="e.g. Mathematics"
+          >
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="btn btn-outline"
+            id="ns-cancel"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="btn btn-primary"
+            id="ns-save"
+          >
+            Save
+          </button>
+        </div>
+      `,
+      body => {
+
+        $("#ns-cancel", body).onclick = closeModal;
+
+        $("#ns-save", body).onclick = async () => {
+
+          const name = $("#ns-subj", body).value.trim();
+
+          if (!name) {
+            toast("Subject name required", "error");
+            return;
+          }
+
+          await db.collection("subjects").add({
+            name: name,
+            classIds: [],
+            createdAt: nowStamp()
+          });
+
+          await logAudit("create_subject", {
+            name: name
+          });
+
+          closeModal();
+
+          toast("Subject added successfully", "success");
+
+          renderApp($("#app"), location.hash);
+        };
+      }
+    );
+
+
+  /* ===============================
+     DELETE SUBJECT
+  =============================== */
+
+  $all("[data-del-subj]").forEach(button => {
+
+    button.onclick = async () => {
+
+      const confirmed = await confirmDialog(
+        "Remove this subject?",
+        "Remove"
+      );
+
+      if (!confirmed) return;
+
+      await db
+        .collection("subjects")
+        .doc(button.dataset.delSubj)
+        .delete();
+
+      toast("Subject removed", "success");
+
+      renderApp($("#app"), location.hash);
+    };
+
+  });
+
+
+  /* ===============================
+     ASSIGN SUBJECT TO CLASSES
+  =============================== */
+
+  $all("[data-assign]").forEach(button => {
+
+    button.onclick = async () => {
+
+      const subj = subjects.find(
+        s => s.id === button.dataset.assign
+      );
+
+      if (!subj) {
+        toast("Subject not found", "error");
+        return;
+      }
+
+
+      if (!classes.length) {
+
+        toast(
+          "Please add at least one class before assigning subjects.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      openModal(
+        `Assign "${subj.name}" to Classes`,
+
+        `
+          <p class="small-note" style="margin-bottom:12px;">
+            Select all classes that should offer this subject.
+          </p>
+
+          <div
+            style="
+              max-height:280px;
+              overflow-y:auto;
+              padding:5px;
+            "
+          >
+
+            ${classes.map(c => `
+
+              <label
+                style="
+                  display:flex;
+                  align-items:center;
+                  gap:10px;
+                  font-weight:500;
+                  padding:10px 5px;
+                  border-bottom:1px solid var(--border);
+                  cursor:pointer;
+                "
+              >
+
+                <input
+                  type="checkbox"
+                  style="width:auto;"
+                  value="${c.id}"
+                  ${
+                    (subj.classIds || []).includes(c.id)
+                      ? "checked"
+                      : ""
+                  }
+                >
+
+                <span>
+                  ${esc(c.name)}
+
+                  <small
+                    style="
+                      color:var(--ink-soft);
+                      margin-left:5px;
+                    "
+                  >
+                    (${esc(c.section)})
+                  </small>
+                </span>
+
+              </label>
+
+            `).join("")}
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              class="btn btn-outline"
+              id="as-cancel"
+            >
+              Cancel
+            </button>
+
+            <button
+              class="btn btn-primary"
+              id="as-save"
+            >
+              Save Assignment
+            </button>
+
+          </div>
+        `,
+
+        body => {
+
+          $("#as-cancel", body).onclick = closeModal;
+
+
+          $("#as-save", body).onclick = async () => {
+
+            const ids = $all(
+              'input[type="checkbox"]:checked',
+              body
+            ).map(checkbox => checkbox.value);
+
+
+            await db
+              .collection("subjects")
+              .doc(subj.id)
+              .update({
+                classIds: ids
+              });
+
+
+            await logAudit("assign_subject_to_classes", {
+              subject: subj.name,
+              classIds: ids
+            });
+
+
+            closeModal();
+
+            toast(
+              "Subject assignment saved successfully",
+              "success"
+            );
+
+            renderApp($("#app"), location.hash);
+
+          };
+
+        }
+      );
+
+    };
+
+  });
+
+}
+/* =========================================================================
+   14. GRADING SCALE
+   ========================================================================= */
+async function renderGrading(content){
+  const scale = await getGradingScale();
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Grading Scale</h3><button class="btn btn-primary btn-sm" id="add-grade">+ Add Grade Band</button></div>
+    <p class="small-note" style="margin-bottom:14px;">Used automatically to compute every subject's grade and remark from the total score.</p>
+    <div class="table-wrap"><table><thead><tr><th>Min</th><th>Max</th><th>Grade</th><th>Remark</th><th></th></tr></thead><tbody>
+    ${scale.length ? scale.map(g=>`<tr><td>${g.min}</td><td>${g.max}</td><td><b>${esc(g.grade)}</b></td><td>${esc(g.remark)}</td><td><button class="btn icon-btn" data-del-grade="${g.id}">🗑️</button></td></tr>`).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">No grading scale configured yet — add bands like 70–100 = A = Excellent.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+  $("#add-grade").onclick = ()=> openModal("Add Grade Band", `
+    <div class="field-row"><div class="field"><label>Min Score</label><input type="number" id="gg-min"></div><div class="field"><label>Max Score</label><input type="number" id="gg-max"></div></div>
+    <div class="field-row"><div class="field"><label>Grade</label><input id="gg-grade" placeholder="A"></div><div class="field"><label>Remark</label><input id="gg-remark" placeholder="Excellent"></div></div>
+    <div class="modal-actions"><button class="btn btn-outline" id="gg-cancel">Cancel</button><button class="btn btn-primary" id="gg-save">Save</button></div>`,
+    body=>{
+      $("#gg-cancel",body).onclick = closeModal;
+      $("#gg-save",body).onclick = async ()=>{
+        const min = parseFloat($("#gg-min",body).value), max = parseFloat($("#gg-max",body).value);
+        const grade = $("#gg-grade",body).value.trim(), remark = $("#gg-remark",body).value.trim();
+        if(isNaN(min)||isNaN(max)||!grade){ toast("Fill all fields","error"); return; }
+        await db.collection("gradingScale").add({min,max,grade,remark, createdAt: nowStamp()});
+        closeModal(); toast("Grade band added","success"); renderApp($("#app"), location.hash);
+      };
+    });
+  $all("[data-del-grade]").forEach(b=> b.onclick = async ()=>{
+    await db.collection("gradingScale").doc(b.dataset.delGrade).delete();
+    toast("Removed","success"); renderApp($("#app"), location.hash);
+  });
+}
+
+/* =========================================================================
+   15. STUDENTS
+   ========================================================================= */
+async function renderStudents(content){
+  const canManage = state.profile.role==="admin" || state.profile.role==="principal";
+  const [students, classes] = await Promise.all([fetchAll("students"), fetchAll("classes","name")]);
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Students (${students.filter(s=>s.status!=="archived").length})</h3>
+      ${canManage ? `<button class="btn btn-primary btn-sm" id="add-student">+ Add Student</button>` : ""}
+    </div>
+    <div class="field" style="max-width:320px;"><input id="stu-search" placeholder="Search by name or admission no…"></div>
+    <div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Admission No</th><th>Class</th><th>House</th><th>Status</th><th>Actions</th></tr></thead><tbody id="stu-tbody"></tbody></table></div>
+  </div>`;
+  function draw(list){
+    $("#stu-tbody").innerHTML = list.length ? list.map(s=>`
+      <tr>
+        <td><div style="width:34px;height:34px;border-radius:8px;background:var(--purple-100);color:var(--purple-700);display:flex;align-items:center;justify-content:center;font-weight:700;">${esc((s.fullName||"?")[0])}</div></td>
+        <td><b>${esc(s.fullName)}</b></td>
+        <td>${esc(s.admissionNo)}</td>
+        <td>${esc(s.className||"—")}</td>
+        <td>${esc(s.house||"—")}</td>
+        <td><span class="badge ${s.status==='archived'?'badge-rejected':'badge-published'}">${esc(s.status||'active')}</span></td>
+        <td>
+          <a class="btn icon-btn" href="#/report/${s.id}" title="View Result">📄</a>
+          ${canManage ? `<button class="btn icon-btn" data-edit-stu="${s.id}" title="Edit">✏️</button><button class="btn icon-btn" data-pin-stu="${s.id}" title="Reset PIN">🔑</button>` : ""}
+        </td>
+      </tr>`).join("") : `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:30px;">No students found.</td></tr>`;
+    if(canManage){
+      $all("[data-edit-stu]").forEach(b=> b.onclick = ()=> openStudentModal(classes, students.find(s=>s.id===b.dataset.editStu)));
+      $all("[data-pin-stu]").forEach(b=> b.onclick = async ()=>{
+        const newPin = genPin();
+        await db.collection("students").doc(b.dataset.pinStu).update({pin:newPin});
+        await logAudit("reset_pin", {studentId:b.dataset.pinStu});
+        toast(`New PIN: ${newPin}`, "success");
+      });
+    }
+  }
+  draw(students.filter(s=>s.status!=="archived"));
+  $("#stu-search").addEventListener("input", e=>{
+    const q = e.target.value.toLowerCase();
+    draw(students.filter(s=> s.status!=="archived" && ((s.fullName||"").toLowerCase().includes(q) || (s.admissionNo||"").toLowerCase().includes(q))));
+  });
+  if(canManage){
+    $("#add-student").onclick = ()=> openStudentModal(classes, null);
+  }
+}
+
+function openStudentModal(classes, student, lockClassId){
+  const isEdit = !!student;
+  const classOptions = lockClassId ? classes.filter(c=>c.id===lockClassId) : classes;
+  openModal(isEdit? "Edit Student" : "Add Student", `
+    ${lockClassId ? `<p class="small-note" style="margin-bottom:12px;">As Class Teacher, you can only register or edit students within your own class.</p>` : ``}
+    <div class="field-row">
+      <div class="field"><label>Full Name</label><input id="sm-name" value="${esc(student?.fullName||'')}"></div>
+      <div class="field"><label>Gender</label><select id="sm-gender"><option ${student?.gender==='Male'?'selected':''}>Male</option><option ${student?.gender==='Female'?'selected':''}>Female</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Class${lockClassId? ' (locked to your class)':''}</label><select id="sm-class" ${lockClassId?'disabled':''}>${classOptions.map(c=>`<option value="${c.id}" data-section="${c.section}" ${(student?.classId===c.id || lockClassId===c.id)?'selected':''}>${esc(c.name)}</option>`).join("")}</select></div>
+      <div class="field"><label>Date of Birth</label><input type="date" id="sm-dob" value="${student?.dob||''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Admission No ${isEdit?'':'(auto-generated if left blank)'}</label><input id="sm-adm" value="${esc(student?.admissionNo||'')}"></div>
+      <div class="field"><label>Status</label><select id="sm-status"><option value="active" ${student?.status==='active'?'selected':''}>Active</option><option value="archived" ${student?.status==='archived'?'selected':''}>Archived</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>House (optional)</label><input id="sm-house" value="${esc(student?.house||'')}" placeholder="e.g. Red House"></div>
+      <div class="field"><label>Parent/Guardian Phone</label><input id="sm-guardphone" value="${esc(student?.guardianPhone||'')}"></div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-outline" id="sm-cancel">Cancel</button><button class="btn btn-primary" id="sm-save">${isEdit?'Save Changes':'Add Student'}</button></div>`,
+    body=>{
+      $("#sm-cancel",body).onclick = closeModal;
+      $("#sm-save",body).onclick = async ()=>{
+        const name = $("#sm-name",body).value.trim();
+        if(!name){ toast("Student name is required","error"); return; }
+        const classSel = $("#sm-class",body);
+        const classId = classSel.value;
+        const className = classSel.selectedOptions[0]?.textContent || "";
+        const section = classSel.selectedOptions[0]?.dataset.section || "PRIMARY";
+        const payload = {
+          fullName: name,
+          gender: $("#sm-gender",body).value,
+          classId, className, section,
+          dob: $("#sm-dob",body).value,
+          status: $("#sm-status",body).value,
+          house: $("#sm-house",body).value.trim(),
+          guardianPhone: $("#sm-guardphone",body).value.trim(),
+          updatedAt: nowStamp()
+        };
+        try{
+          if(isEdit){
+            await db.collection("students").doc(student.id).update(payload);
+            await logAudit("edit_student", {id: student.id, name});
+            toast("Student updated","success");
+          } else {
+            payload.admissionNo = $("#sm-adm",body).value.trim() || genAdmissionNo(section);
+            payload.pin = genPin();
+            payload.createdAt = nowStamp();
+            const ref = await db.collection("students").add(payload);
+            await logAudit("add_student", {id: ref.id, name});
+            toast(`Student added. PIN: ${payload.pin}`, "success");
+          }
+          closeModal();
+          renderApp($("#app"), location.hash);
+        }catch(err){ toast(err.message, "error"); }
+      };
+    });
+}
+
+/* Subject Teacher view — read-only, strictly scoped to the classes and
+   subjects they were assigned in Staff & Users. Grouped by class, and
+   each group shows exactly which subject(s) this teacher teaches there,
+   so the data stays clearly organized rather than one flat list. */
+async function renderMyStudents(content){
+  const assignments = state.profile.assignments || [];
+  const classIds = [...new Set(assignments.map(a=>a.classId))];
+  if(!classIds.length){ content.innerHTML = `<div class="empty-state">No classes assigned to you yet — ask the administrator to assign you a class and subject.</div>`; return; }
+
+  const students = await fetchAll("students");
+  const mine = students.filter(s=> classIds.includes(s.classId) && s.status!=="archived");
+
+  // Group assignments by class so each class panel can show which
+  // subject(s) this teacher is responsible for there.
+  const subjectsByClass = {};
+  assignments.forEach(a=>{
+    if(!subjectsByClass[a.classId]) subjectsByClass[a.classId] = new Set();
+    subjectsByClass[a.classId].add(a.subjectName);
+  });
+
+  const classGroups = classIds.map(cid=>{
+    const className = (assignments.find(a=>a.classId===cid)||{}).className || "Class";
+    const classStudents = mine.filter(s=>s.classId===cid).sort((a,b)=>(a.fullName||"").localeCompare(b.fullName||""));
+    const subjectNames = [...(subjectsByClass[cid]||[])];
+    return {cid, className, subjectNames, classStudents};
+  }).sort((a,b)=> a.className.localeCompare(b.className));
+
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>My Students (${mine.length})</h3></div>
+    <p class="small-note">You can only see the classes and subjects you've been assigned — this list is read-only. To register a new student, ask the Class Teacher or Admin.</p>
+  </div>
+  ${classGroups.map(g=>`
+    <div class="panel">
+      <div class="panel-head">
+        <h3>${esc(g.className)} <span class="badge badge-approved" style="margin-left:8px;">${esc(g.subjectNames.join(", "))}</span></h3>
+        <span class="small-note">${g.classStudents.length} student${g.classStudents.length===1?'':'s'}</span>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Admission No</th><th>House</th></tr></thead><tbody>
+      ${g.classStudents.length ? g.classStudents.map(s=>`<tr><td>${esc(s.fullName)}</td><td>${esc(s.admissionNo)}</td><td>${esc(s.house||'—')}</td></tr>`).join("") : `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);">No students in this class yet.</td></tr>`}
+      </tbody></table></div>
+    </div>
+  `).join("")}`;
+}
+
+/* =========================================================================
+   16. STAFF / USERS  (admin creates teacher / principal / parent accounts)
+   ========================================================================= */
+async function renderStaff(content){
+  const [users, classes, subjects] = await Promise.all([fetchAll("users"), fetchAll("classes","name"), fetchAll("subjects","name")]);
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Staff &amp; User Accounts</h3><button class="btn btn-primary btn-sm" id="add-staff">+ Add User</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Subject Teacher Assignment(s)</th><th>Class Teacher Assignment</th><th>Actions</th></tr></thead><tbody>
+    ${users.length ? users.map(u=>`
+      <tr>
+        <td><b>${esc(u.name)}</b></td><td>${esc(u.email)}</td>
+        <td><span class="badge badge-approved">${esc(u.role)}</span></td>
+        <td style="font-size:12.5px;color:var(--ink-soft);">${(u.assignments||[]).map(a=>`${esc(a.subjectName)} · ${esc(a.className)}`).join("<br>") || "—"}</td>
+        <td style="font-size:12.5px;color:var(--ink-soft);">${u.classTeacherOf? `<b>${esc(u.classTeacherOfName||'')}</b>` : "—"}</td>
+        <td>${u.role==='teacher' ? `<button class="btn btn-outline btn-sm" data-assign-teacher="${u.id}">Assign</button>` : ""}</td>
+      </tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No staff accounts yet.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+
+  $("#add-staff").onclick = ()=> openModal("Add User Account", `
+    <div id="add-staff-msg"></div>
+    <div class="field"><label>Full Name</label><input id="as-name"></div>
+    <div class="field"><label>Email</label><input id="as-email" type="email"></div>
+    <div class="field"><label>Temporary Password (min 6 characters)</label><input id="as-pass" type="text" placeholder="e.g. Purity@2026"></div>
+    <div class="field"><label>Role</label>
+      <select id="as-role">
+        <option value="teacher">Teacher / Subject Teacher</option>
+        <option value="principal">Principal / Headmaster</option>
+        <option value="admin">School Admin</option>
+        <option value="parent">Parent</option>
+      </select>
+    </div>
+    <div class="modal-actions"><button class="btn btn-outline" id="as-cancel">Cancel</button><button class="btn btn-primary" id="as-save">Create Account</button></div>`,
+    body=>{
+      $("#as-cancel",body).onclick = closeModal;
+      $("#as-save",body).onclick = async ()=>{
+        const name = $("#as-name",body).value.trim(), email = $("#as-email",body).value.trim(), pass = $("#as-pass",body).value;
+        const role = $("#as-role",body).value;
+        const msg = $("#add-staff-msg", body);
+        if(!name || !email || pass.length < 6){ msg.innerHTML = `<div class="err-msg">Fill all fields — password needs 6+ characters.</div>`; return; }
+        try{
+          const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+          await db.collection("users").doc(cred.user.uid).set({
+            name, email, role, assignments: [], createdAt: nowStamp()
+          });
+          await secondaryAuth.signOut();
+          await logAudit("create_staff", {email, role});
+          closeModal(); toast(`${role} account created for ${name}`, "success");
+          renderApp($("#app"), location.hash);
+        }catch(err){ msg.innerHTML = `<div class="err-msg">${esc(err.message)}</div>`; }
+      };
+    });
+
+  $all("[data-assign-teacher]").forEach(b=> b.onclick = ()=>{
+    const u = users.find(x=>x.id===b.dataset.assignTeacher);
+    openModal(`Assign ${u.name}`, `
+      <p class="small-note" style="margin-bottom:10px;">A teacher can hold <b>both</b> roles at once: they can be the <b>Class Teacher</b> of one class (full access to that class's students, attendance and character reports) <i>and</i> a <b>Subject Teacher</b> for one or more subject + class combinations (can only record results for their own assigned subjects).</p>
+
+      <div class="rc-section-title" style="margin-top:0;">Subject Teacher Assignment(s):</div>
+      <div class="field-row">
+        <div class="field"><label>Subject</label><select id="at-subject">${subjects.map(s=>`<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join("")}</select></div>
+        <div class="field"><label>Class</label><select id="at-class">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}">${esc(c.name)}</option>`).join("")}</select></div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="at-add" type="button">+ Add to list</button>
+      <div style="margin-top:12px;" id="at-list">
+        ${(u.assignments||[]).map((a,i)=>`<div data-idx="${i}" style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);">${esc(a.subjectName)} — ${esc(a.className)}</div>`).join("")}
+      </div>
+
+      <div class="rc-section-title">Class Teacher Assignment:</div>
+      <div class="field"><label><input type="checkbox" style="width:auto;" id="at-classteacher" ${u.classTeacherOf?'checked':''}> Make this person the Class Teacher of:</label>
+        <select id="at-classteacher-select">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${u.classTeacherOf===c.id?'selected':''}>${esc(c.name)}</option>`).join("")}</select>
+      </div>
+      <p class="small-note">Class Teacher = full access to every subject's results, attendance, and character/practical-skill reports for that one class only. Subject Teacher = can only enter/edit results for the subject(s) + class(es) listed above.</p>
+      <div class="modal-actions"><button class="btn btn-outline" id="at-cancel">Cancel</button><button class="btn btn-primary" id="at-save">Save Assignments</button></div>`,
+      body=>{
+        let assignments = [...(u.assignments||[])];
+        function redraw(){ $("#at-list",body).innerHTML = assignments.map((a,i)=>`<div style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">${esc(a.subjectName)} — ${esc(a.className)} <button type="button" data-rm="${i}" class="btn icon-btn">✕</button></div>`).join("");
+          $all("[data-rm]",body).forEach(x=> x.onclick = ()=>{ assignments.splice(parseInt(x.dataset.rm),1); redraw(); }); }
+        redraw();
+        $("#at-add",body).onclick = ()=>{
+          const subjSel = $("#at-subject",body), classSel = $("#at-class",body);
+          assignments.push({subjectId:subjSel.value, subjectName:subjSel.selectedOptions[0].dataset.name, classId:classSel.value, className:classSel.selectedOptions[0].dataset.name});
+          redraw();
+        };
+        $("#at-cancel",body).onclick = closeModal;
+        $("#at-save",body).onclick = async ()=>{
+          const ctChecked = $("#at-classteacher",body).checked;
+          const ctSel = $("#at-classteacher-select",body);
+          const payload = {assignments};
+          payload.classTeacherOf = ctChecked ? ctSel.value : firebase.firestore.FieldValue.delete();
+          payload.classTeacherOfName = ctChecked ? ctSel.selectedOptions[0].dataset.name : firebase.firestore.FieldValue.delete();
+          await db.collection("users").doc(u.id).update(payload);
+          closeModal(); toast("Assignments saved","success"); renderApp($("#app"), location.hash);
+        };
+      });
+  });
+}
+
+/* =========================================================================
+   17. RESULT PINS
+   ========================================================================= */
+async function renderPins(content){
+  const students = await fetchAll("students");
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Result PIN Management</h3></div>
+    <p class="small-note" style="margin-bottom:14px;">Each student has one active PIN used with their Admission Number on the public result checker. Reset a PIN any time from the Students page.</p>
+    <div class="table-wrap"><table><thead><tr><th>Student</th><th>Admission No</th><th>PIN</th><th>Action</th></tr></thead><tbody>
+    ${students.filter(s=>s.status!=="archived").map(s=>`<tr><td>${esc(s.fullName)}</td><td>${esc(s.admissionNo)}</td><td><code>${esc(s.pin||'—')}</code></td><td><button class="btn btn-outline btn-sm" data-reset="${s.id}">Generate New PIN</button></td></tr>`).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);">No students yet.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+  $all("[data-reset]").forEach(b=> b.onclick = async ()=>{
+    const newPin = genPin();
+    await db.collection("students").doc(b.dataset.reset).update({pin:newPin});
+    await logAudit("reset_pin", {studentId:b.dataset.reset});
+    toast(`New PIN generated: ${newPin}`,"success");
+    renderApp($("#app"), location.hash);
+  });
+}
+
+/* =========================================================================
+   18. AUDIT LOG  (admin / superadmin only — guarded in renderApp router too)
+   ========================================================================= */
+async function renderAudit(content){
+  if(!AUDIT_LOG_ROLES.includes(state.profile.role)){
+    content.innerHTML = `<div class="empty-state"><div class="big">🔒</div>The Audit Log is restricted to administrators only.</div>`;
+    return;
+  }
+  const snap = await db.collection("auditLogs").orderBy("at","desc").limit(150).get();
+  const logs = snap.docs.map(d=>({id:d.id,...d.data()}));
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Audit Log</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>When</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody>
+    ${logs.length ? logs.map(l=>`<tr><td style="white-space:nowrap;">${fmtDate(l.at)}</td><td>${esc(l.userName)}</td><td>${esc(l.role)}</td><td>${esc(l.action)}</td><td style="font-size:12px;color:var(--ink-soft);">${esc(JSON.stringify(l.details||{}))}</td></tr>`).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">No activity recorded yet.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+
+/* =========================================================================
+   19. ENTER RESULTS
+   ========================================================================= */
+
+async function renderEnterResults(content) {
+
+  try {
+
+    /* ---------------------------------------------------------
+       LOAD DATA
+    --------------------------------------------------------- */
+
+    const [
+      classes,
+      subjects,
+      students,
+      session
+    ] = await Promise.all([
+      fetchAll("classes"),
+      fetchAll("subjects"),
+      fetchAll("students"),
+      getCurrentSession()
+    ]);
+
+    if (!session) {
+      content.innerHTML = `
+        <div class="empty-state">
+          <div class="big">📅</div>
+          No active academic session has been set up yet.
+        </div>
+      `;
+      return;
+    }
+
+    const term = state.currentTerm || "first";
+
+
+    /* ---------------------------------------------------------
+       BUILD CLASS + SUBJECT COMBINATIONS
+    --------------------------------------------------------- */
+
+    let combinations = [];
+
+    const userRole =
+      state.profile &&
+      state.profile.role
+        ? String(state.profile.role).toLowerCase()
+        : "";
+
+    const isAdmin =
+      userRole === "admin" ||
+      userRole === "super_admin" ||
+      userRole === "principal" ||
+      userRole === "headteacher";
+
+
+    /*
+      ADMIN / PRINCIPAL:
+      Show only Class + Subject combinations that are actually assigned
+      via the Subjects page (subject.classIds). If a subject has no
+      assignments recorded yet, it still shows for every class as a
+      safe fallback so nothing is hidden by an empty configuration.
+
+      TEACHER:
+      Only show assignments given to that teacher.
+    */
+
+    if (
+      !isAdmin &&
+      state.profile &&
+      Array.isArray(state.profile.assignments) &&
+      state.profile.assignments.length
+    ) {
+
+      combinations = state.profile.assignments
+        .map(a => {
+
+          const classItem = classes.find(
+            c => String(c.id) === String(a.classId)
+          );
+
+          const subjectItem = subjects.find(
+            s => String(s.id) === String(a.subjectId)
+          );
+
+          return {
+            classId: a.classId,
+            className:
+              a.className ||
+              (classItem
+                ? (
+                    classItem.name ||
+                    classItem.className ||
+                    classItem.title
+                  )
+                : "Unnamed Class"),
+
+            subjectId: a.subjectId,
+            subjectName:
+              a.subjectName ||
+              (subjectItem
+                ? (
+                    subjectItem.name ||
+                    subjectItem.subjectName ||
+                    subjectItem.title
+                  )
+                : "Unnamed Subject")
+          };
+
+        })
+
+        .filter(item =>
+          item.classId &&
+          item.subjectId
+        );
+
+    } else {
+
+      /*
+        ADMIN / PRINCIPAL
+        Build combinations from each subject's assigned classes
+        (subject.classIds), rather than every class × every subject.
+      */
+
+      subjects.forEach(s => {
+
+        if (s.active === false) return;
+
+        const assignedClassIds =
+          Array.isArray(s.classIds) ? s.classIds : [];
+
+        const targetClasses = assignedClassIds.length
+          ? classes.filter(c =>
+              assignedClassIds.some(id => String(id) === String(c.id))
+            )
+          : classes; // fallback: subject has no assignments yet
+
+        targetClasses.forEach(c => {
+
+          if (c.active === false) return;
+
+          combinations.push({
+
+            classId: c.id,
+
+            className:
+              c.name ||
+              c.className ||
+              c.title ||
+              "Unnamed Class",
+
+            subjectId: s.id,
+
+            subjectName:
+              s.name ||
+              s.subjectName ||
+              s.title ||
+              "Unnamed Subject"
+
+          });
+
+        });
+
+      });
+
+    }
+
+
+    /* ---------------------------------------------------------
+       REMOVE DUPLICATES
+    --------------------------------------------------------- */
+
+    const seen = new Set();
+
+    combinations = combinations.filter(item => {
+
+      const key =
+        `${item.classId}|${item.subjectId}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+
+      return true;
+
+    });
+
+
+    /* ---------------------------------------------------------
+       NO CLASS / SUBJECT
+    --------------------------------------------------------- */
+
+    if (!combinations.length) {
+
+      content.innerHTML = `
+        <div class="empty-state">
+
+          <div class="big">✏️</div>
+
+          No Class + Subject combinations are available.
+
+        </div>
+      `;
+
+      return;
+
+    }
+
+
+    /* ---------------------------------------------------------
+       RENDER PAGE
+    --------------------------------------------------------- */
+
+    content.innerHTML = `
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>Enter Results</h3>
+
+        </div>
+
+
+        <div class="field-row">
+
+
+          <div class="field">
+
+            <label>Class + Subject</label>
+
+            <select id="er-assign">
+
+              <option value="">
+                — Select Class + Subject —
+              </option>
+
+              ${combinations.map(item => `
+
+                <option
+                  value="${esc(item.classId)}|${esc(item.subjectId)}"
+                >
+
+                  ${esc(item.className)}
+                  —
+                  ${esc(item.subjectName)}
+
+                </option>
+
+              `).join("")}
+
+            </select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Term</label>
+
+            <select id="er-term">
+
+              ${TERMS.map(t => `
+
+                <option
+                  value="${esc(t.id)}"
+                  ${t.id === term ? "selected" : ""}
+                >
+
+                  ${esc(t.label)}
+
+                </option>
+
+              `).join("")}
+
+            </select>
+
+          </div>
+
+
+        </div>
+
+
+        <p class="small-note">
+
+          Session:
+
+          <b>${esc(session.name)}</b>
+
+          · Max per test: 20 (×3 = 60)
+
+          · Exam: 40
+
+          · Total: 100
+
+          — grade &amp; total are calculated automatically. The
+
+          <b>B/F</b> column is the score brought forward from the
+
+          previous term (used to compute the cumulative score on the
+
+          report card) — leave it at 0 for First Term.
+
+        </p>
+
+      </div>
+
+
+      <div id="er-table-wrap">
+
+        <div class="empty-state">
+
+          <div class="big">✏️</div>
+
+          Select a Class + Subject to enter results.
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    /* ---------------------------------------------------------
+       GET PAGE ELEMENTS
+    --------------------------------------------------------- */
+
+    const assignmentSelect =
+      $("#er-assign");
+
+    const termSelect =
+      $("#er-term");
+
+    const tableWrap =
+      $("#er-table-wrap");
+
+
+    if (
+      !assignmentSelect ||
+      !termSelect ||
+      !tableWrap
+    ) {
+
+      console.error(
+        "Enter Results elements could not be found."
+      );
+
+      return;
+
+    }
+
+
+    /* ---------------------------------------------------------
+       LOAD RESULT TABLE
+    --------------------------------------------------------- */
+
+    async function loadTable() {
+
+      try {
+
+        const value =
+          assignmentSelect.value;
+
+        const selectedTerm =
+          termSelect.value;
+
+
+        /*
+          NO SELECTION
+        */
+
+        if (
+          !value ||
+          !value.includes("|")
+        ) {
+
+          tableWrap.innerHTML = `
+
+            <div class="empty-state">
+
+              <div class="big">✏️</div>
+
+              Select a Class + Subject to enter results.
+
+            </div>
+
+          `;
+
+          return;
+
+        }
+
+
+        /*
+          SPLIT CLASS AND SUBJECT
+        */
+
+        const [
+          classId,
+          subjectId
+        ] = value.split("|");
+
+
+        /*
+          FIND SELECTED COMBINATION
+        */
+
+        const assignment =
+          combinations.find(item =>
+            String(item.classId) === String(classId) &&
+            String(item.subjectId) === String(subjectId)
+          );
+
+
+        if (!assignment) {
+
+          tableWrap.innerHTML = `
+
+            <div class="empty-state">
+
+              <div class="big">⚠️</div>
+
+              Class or Subject could not be found.
+
+            </div>
+
+          `;
+
+          return;
+
+        }
+
+
+        /*
+          SHOW LOADING
+        */
+
+        tableWrap.innerHTML = `
+
+          <div class="empty-state">
+
+            <div class="big">⏳</div>
+
+            Loading students...
+
+          </div>
+
+        `;
+
+
+        /*
+          GET GRADING SCALE
+        */
+
+        const gradingScale =
+          await getGradingScale();
+
+
+        /*
+          FIND STUDENTS
+
+          This checks both classId and className.
+
+          This prevents the previous problem where
+          the student exists but classId does not
+          exactly match the assignment.
+        */
+
+        const selectedClass =
+          classes.find(c =>
+            String(c.id) === String(classId)
+          );
+
+
+        const selectedClassName =
+          assignment.className ||
+          (
+            selectedClass
+              ? (
+                  selectedClass.name ||
+                  selectedClass.className ||
+                  selectedClass.title
+                )
+              : ""
+          );
+
+
+        const classStudents =
+          students.filter(student => {
+
+            if (
+              student.status === "archived"
+            ) {
+              return false;
+            }
+
+
+            const studentClassId =
+              String(
+                student.classId ||
+                student.class ||
+                ""
+              ).trim();
+
+
+            const studentClassName =
+              String(
+                student.className ||
+                ""
+              ).trim();
+
+
+            return (
+
+              studentClassId ===
+                String(classId).trim()
+
+              ||
+
+              studentClassName.toLowerCase() ===
+                String(selectedClassName)
+                  .trim()
+                  .toLowerCase()
+
+            );
+
+          });
+
+
+        /*
+          NO STUDENTS
+        */
+
+        if (!classStudents.length) {
+
+          tableWrap.innerHTML = `
+
+            <div class="empty-state">
+
+              <div class="big">👩‍🎓</div>
+
+              No students have been assigned to
+
+              <b>
+                ${esc(selectedClassName)}
+              </b>
+
+              yet.
+
+            </div>
+
+          `;
+
+          return;
+
+        }
+
+
+        /*
+          LOAD EXISTING RESULTS
+        */
+
+        const resultDocs =
+          await Promise.all(
+
+            classStudents.map(student =>
+
+              db.collection("results")
+                .doc(
+                  `${student.id}_${subjectId}_${session.id}_${selectedTerm}`
+                )
+                .get()
+
+            )
+
+          );
+
+
+        /*
+          RENDER RESULT TABLE
+        */
+
+        tableWrap.innerHTML = `
+
+          <div class="panel">
+
+
+            <div class="panel-head">
+
+              <h3>
+
+                ${esc(assignment.className)}
+
+                —
+
+                ${esc(assignment.subjectName)}
+
+              </h3>
+
+
+              <div>
+
+                <button
+                  class="btn btn-outline btn-sm"
+                  id="er-save-draft"
+                >
+
+                  Save Draft
+
+                </button>
+
+
+                <button
+                  class="btn btn-primary btn-sm"
+                  id="er-submit"
+                >
+
+                  Submit Results
+
+                </button>
+
+              </div>
+
+
+            </div>
+
+
+            <div class="table-wrap">
+
+
+              <table id="er-table">
+
+
+                <thead>
+
+                  <tr>
+
+                    <th>Student</th>
+
+                    <th>Test 1 (20)</th>
+
+                    <th>Test 2 (20)</th>
+
+                    <th>Test 3 (20)</th>
+
+                    <th>Exam (40)</th>
+
+                    <th>B/F</th>
+
+                    <th>Total</th>
+
+                    <th>Grade</th>
+
+                    <th>Status</th>
+
+                    <th></th>
+
+                  </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                  ${classStudents.map(
+                    (student, index) => {
+
+                      const resultData =
+                        resultDocs[index].exists
+                          ? resultDocs[index].data()
+                          : {};
+
+
+                      const status =
+                        resultData.status ||
+                        "draft";
+
+
+                      const isLocked =
+
+                        status === "submitted" ||
+                        status === "approved" ||
+                        status === "published";
+
+
+                      return `
+
+                        <tr
+                          data-student="${esc(student.id)}"
+                          data-locked="${isLocked ? "1" : "0"}"
+                        >
+
+
+                          <td>
+
+                            <b>
+                              ${esc(
+                                student.fullName ||
+                                student.name ||
+                                "Unnamed Student"
+                              )}
+                            </b>
+
+                          </td>
+
+
+                          <td>
+
+                            <input
+                              class="score-input"
+                              data-f="test1"
+                              type="number"
+                              min="0"
+                              max="20"
+                              value="${resultData.test1 ?? ""}"
+                              ${isLocked ? "disabled" : ""}
+                            >
+
+                          </td>
+
+
+                          <td>
+
+                            <input
+                              class="score-input"
+                              data-f="test2"
+                              type="number"
+                              min="0"
+                              max="20"
+                              value="${resultData.test2 ?? ""}"
+                              ${isLocked ? "disabled" : ""}
+                            >
+
+                          </td>
+
+
+                          <td>
+
+                            <input
+                              class="score-input"
+                              data-f="test3"
+                              type="number"
+                              min="0"
+                              max="20"
+                              value="${resultData.test3 ?? ""}"
+                              ${isLocked ? "disabled" : ""}
+                            >
+
+                          </td>
+
+
+                          <td>
+
+                            <input
+                              class="score-input"
+                              data-f="exam"
+                              type="number"
+                              min="0"
+                              max="40"
+                              value="${resultData.exam ?? ""}"
+                              ${isLocked ? "disabled" : ""}
+                            >
+
+                          </td>
+
+
+                          <td>
+
+                            <input
+                              class="score-input"
+                              data-f="bf"
+                              type="number"
+                              min="0"
+                              value="${resultData.bf ?? 0}"
+                              ${isLocked ? "disabled" : ""}
+                            >
+
+                          </td>
+
+
+                          <td class="er-total">
+
+                            ${resultData.total ?? "—"}
+
+                          </td>
+
+
+                          <td class="er-grade">
+
+                            ${esc(
+                              resultData.grade ||
+                              "—"
+                            )}
+
+                          </td>
+
+
+                          <td>
+
+                            <span
+                              class="badge badge-${esc(status)}"
+                            >
+
+                              ${esc(status)}
+
+                            </span>
+
+                          </td>
+
+
+                          <td>
+
+                            ${
+                              status === "draft"
+                                ? `<button type="button" class="btn icon-btn" data-del-draft="${esc(student.id)}" title="Delete this draft">🗑️</button>`
+                                : ""
+                            }
+
+                          </td>
+
+
+                        </tr>
+
+                      `;
+
+                    }
+
+                  ).join("")}
+
+
+                </tbody>
+
+
+              </table>
+
+
+            </div>
+
+
+            <p
+              class="small-note"
+              style="margin-top:10px;"
+            >
+
+              Draft scores can be saved and reopened for editing, or
+
+              deleted, at any time before you submit. Once submitted,
+
+              scores are locked until reviewed by the Principal/Admin —
+
+              if a submission is rejected it unlocks automatically for
+
+              you to correct and resubmit.
+
+            </p>
+
+
+          </div>
+
+        `;
+
+
+        /* -----------------------------------------------------
+           CALCULATE TOTAL AND GRADE
+        ----------------------------------------------------- */
+
+        function recalculateRow(row) {
+
+          const getScore = field => {
+
+            const input =
+              $(
+                `input[data-f="${field}"]`,
+                row
+              );
+
+            return input
+              ? (
+                  parseFloat(input.value) || 0
+                )
+              : 0;
+
+          };
+
+
+          const test1 =
+            getScore("test1");
+
+          const test2 =
+            getScore("test2");
+
+          const test3 =
+            getScore("test3");
+
+          const exam =
+            getScore("exam");
+
+
+          const total =
+            test1 +
+            test2 +
+            test3 +
+            exam;
+
+
+          const gradeData =
+            computeGradeFromScore(
+              total,
+              gradingScale
+            );
+
+
+          const totalCell =
+            $(".er-total", row);
+
+          const gradeCell =
+            $(".er-grade", row);
+
+
+          if (totalCell) {
+
+            totalCell.textContent =
+              total;
+
+          }
+
+
+          if (gradeCell) {
+
+            gradeCell.textContent =
+              gradeData.grade;
+
+          }
+
+        }
+
+
+        /*
+          ADD SCORE INPUT EVENTS
+        */
+
+        $all(
+          "#er-table tbody tr"
+        ).forEach(row => {
+
+          $all(
+            "input.score-input",
+            row
+          ).forEach(input => {
+
+            input.addEventListener(
+              "input",
+              () => {
+
+                let max =
+                  parseFloat(input.max);
+
+                let value =
+                  parseFloat(input.value);
+
+
+                if (
+                  !Number.isNaN(max) &&
+                  !Number.isNaN(value) &&
+                  value > max
+                ) {
+
+                  input.value = max;
+
+                }
+
+
+                if (
+                  !Number.isNaN(value) &&
+                  value < 0
+                ) {
+
+                  input.value = 0;
+
+                }
+
+
+                recalculateRow(row);
+
+              }
+            );
+
+          });
+
+        });
+
+
+        /*
+          CALCULATE EXISTING ROWS
+        */
+
+        $all(
+          "#er-table tbody tr"
+        ).forEach(row => {
+
+          if (
+            row.dataset.locked !== "1"
+          ) {
+
+            recalculateRow(row);
+
+          }
+
+        });
+
+
+        /* -----------------------------------------------------
+           DELETE A SINGLE DRAFT
+        ----------------------------------------------------- */
+
+        $all("[data-del-draft]").forEach(btn => {
+
+          btn.onclick = async () => {
+
+            const confirmed = await confirmDialog(
+              "Delete this draft result? This cannot be undone.",
+              "Delete Draft"
+            );
+
+            if (!confirmed) return;
+
+            const sid = btn.dataset.delDraft;
+
+            const resultId =
+              `${sid}_${subjectId}_${session.id}_${selectedTerm}`;
+
+            try {
+              await db.collection("results").doc(resultId).delete();
+              await logAudit("delete_draft_result", {studentId: sid, classId, subjectId, term: selectedTerm});
+              toast("Draft deleted", "success");
+              loadTable();
+            } catch (error) {
+              toast(error.message || "Unable to delete draft.", "error");
+            }
+
+          };
+
+        });
+
+
+        /* -----------------------------------------------------
+           SAVE RESULTS
+        ----------------------------------------------------- */
+
+        async function saveResults(newStatus) {
+
+          const rows =
+            $all(
+              "#er-table tbody tr"
+            );
+
+
+          const batch =
+            db.batch();
+
+
+          let count = 0;
+
+
+          rows.forEach(row => {
+
+            if (
+              row.dataset.locked === "1"
+            ) {
+              return;
+            }
+
+
+            const studentId =
+              row.dataset.student;
+
+
+            const getScore = field => {
+
+              const input =
+                $(
+                  `input[data-f="${field}"]`,
+                  row
+                );
+
+
+              if (!input) {
+                return 0;
+              }
+
+
+              const value =
+                input.value;
+
+
+              return value === ""
+                ? 0
+                : (
+                    parseFloat(value) || 0
+                  );
+
+            };
+
+
+            const test1 =
+              getScore("test1");
+
+            const test2 =
+              getScore("test2");
+
+            const test3 =
+              getScore("test3");
+
+            const exam =
+              getScore("exam");
+
+            const bf =
+              getScore("bf");
+
+
+            const total =
+              test1 +
+              test2 +
+              test3 +
+              exam;
+
+            const cumScore =
+              total + bf;
+
+
+            const gradeData =
+              computeGradeFromScore(
+                total,
+                gradingScale
+              );
+
+
+            const resultId =
+              `${studentId}_${subjectId}_${session.id}_${selectedTerm}`;
+
+
+            const resultRef =
+              db.collection("results")
+                .doc(resultId);
+
+
+            batch.set(
+
+              resultRef,
+
+              {
+
+                studentId,
+
+                subjectId,
+
+                subjectName:
+                  assignment.subjectName,
+
+                classId,
+
+                className:
+                  assignment.className,
+
+                sessionId:
+                  session.id,
+
+                sessionName:
+                  session.name,
+
+                term:
+                  selectedTerm,
+
+                test1,
+
+                test2,
+
+                test3,
+
+                exam,
+
+                bf,
+
+                total,
+
+                cumScore,
+
+                grade:
+                  gradeData.grade,
+
+                gradeRemark:
+                  gradeData.remark,
+
+                status:
+                  newStatus,
+
+                rejectionReason:
+                  firebase.firestore.FieldValue.delete(),
+
+                teacherId:
+                  state.user
+                    ? state.user.uid
+                    : "",
+
+                teacherName:
+                  state.profile
+                    ? (
+                        state.profile.name ||
+                        ""
+                      )
+                    : "",
+
+                updatedAt:
+                  nowStamp()
+
+              },
+
+              {
+                merge: true
+              }
+
+            );
+
+
+            count++;
+
+          });
+
+
+          if (!count) {
+
+            toast(
+              "Nothing to save.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          try {
+
+            await batch.commit();
+
+
+            await logAudit(
+
+              newStatus === "submitted"
+                ? "submit_results"
+                : "save_draft_results",
+
+              {
+
+                classId,
+
+                subjectId,
+
+                term:
+                  selectedTerm,
+
+                count
+
+              }
+
+            );
+
+
+            toast(
+
+              newStatus === "submitted"
+                ? "Results submitted for review"
+                : "Draft saved. You can reopen and edit it any time before submitting.",
+
+              "success"
+
+            );
+
+
+            loadTable();
+
+          } catch (error) {
+
+            console.error(
+              "Error saving results:",
+              error
+            );
+
+
+            toast(
+              error.message ||
+              "Unable to save results.",
+              "error"
+            );
+
+          }
+
+        }
+
+
+        /* -----------------------------------------------------
+           SAVE DRAFT BUTTON
+        ----------------------------------------------------- */
+
+        const saveDraftButton =
+          $("#er-save-draft");
+
+
+        if (saveDraftButton) {
+
+          saveDraftButton.onclick =
+            () => {
+
+              saveResults("draft");
+
+            };
+
+        }
+
+
+        /* -----------------------------------------------------
+           SUBMIT BUTTON
+        ----------------------------------------------------- */
+
+        const submitButton =
+          $("#er-submit");
+
+
+        if (submitButton) {
+
+          submitButton.onclick =
+            async () => {
+
+              const confirmed =
+                await confirmDialog(
+
+                  "Submit these results for Principal review? You will not be able to edit them until they are reviewed.",
+
+                  "Submit"
+
+                );
+
+
+              if (confirmed) {
+
+                saveResults(
+                  "submitted"
+                );
+
+              }
+
+            };
+
+        }
+
+
+      } catch (error) {
+
+        console.error(
+          "Enter Results error:",
+          error
+        );
+
+
+        tableWrap.innerHTML = `
+
+          <div class="empty-state">
+
+            <div class="big">⚠️</div>
+
+            Unable to load the result table.
+
+            <br>
+
+            <small>
+              ${esc(
+                error.message ||
+                "Unknown error"
+              )}
+            </small>
+
+          </div>
+
+        `;
+
+      }
+
+    }
+
+
+    /* ---------------------------------------------------------
+       EVENTS
+    --------------------------------------------------------- */
+
+    assignmentSelect.addEventListener(
+      "change",
+      loadTable
+    );
+
+
+    termSelect.addEventListener(
+      "change",
+      () => {
+
+        state.currentTerm =
+          termSelect.value;
+
+        loadTable();
+
+      }
+    );
+
+
+    /*
+      IMPORTANT:
+
+      We do NOT automatically load a table
+      until the user selects Class + Subject.
+
+      This prevents the old blank/null errors.
+    */
+
+  } catch (error) {
+
+    console.error(
+      "renderEnterResults error:",
+      error
+    );
+
+
+    content.innerHTML = `
+
+      <div class="empty-state">
+
+        <div class="big">⚠️</div>
+
+        Unable to load Enter Results.
+
+        <br>
+
+        <small>
+          ${esc(
+            error.message ||
+            "Unknown error"
+          )}
+        </small>
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+/* ============================================================
+   19b. MY CLASS (FULL ACCESS) — for Class Teachers only
+   ============================================================
+   A Class Teacher can see every subject's results for every
+   student in the one class they are Class Teacher of, not just
+   their own assigned subject(s). They can also open the full
+   Term Record (attendance, character development, practical
+   skills, remarks, promotion) for any student in the class.
+   ============================================================ */
+async function renderClassOverview(content){
+  const classId = state.profile.classTeacherOf;
+  const className = state.profile.classTeacherOfName || "your class";
+  if(!classId){ content.innerHTML = `<div class="empty-state">You are not currently set as a Class Teacher.</div>`; return; }
+
+  const [session, students, results, classDoc] = await Promise.all([
+    getCurrentSession(), fetchAll("students"), fetchAll("results"), db.collection("classes").doc(classId).get()
+  ]);
+  if(!session){ content.innerHTML = `<div class="empty-state">No academic session configured yet.</div>`; return; }
+
+  const term = state.currentTerm || "first";
+  // Strictly scoped: a Class Teacher only ever sees students who belong
+  // to the one class they are Class Teacher of — never any other class.
+  const classStudents = students.filter(s => s.classId === classId && s.status !== "archived")
+    .sort((a,b)=>(a.fullName||"").localeCompare(b.fullName||""));
+  const classResults = results.filter(r => r.classId === classId && r.sessionId === session.id && r.term === term);
+  const classSection = classDoc.exists ? (classDoc.data().section || "PRIMARY") : "PRIMARY";
+  const classesForModal = [{id: classId, name: className, section: classSection}];
+
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">
+      <h3>${esc(className)} — Full Class Access (Class Teacher)</h3>
+      <select id="co-term">${TERMS.map(t=>`<option value="${t.id}" ${t.id===term?'selected':''}>${t.label}</option>`).join("")}</select>
+    </div>
+    <p class="small-note">As Class Teacher you can view every subject's results for this class, and open each student's full term record (attendance, character development, practical skills, class teacher remark, promotion) — even for subjects you don't personally teach. To edit a subject's scores, use Enter Results if you are also that subject's teacher. You only ever see students belonging to this one class.</p>
+    <div class="table-wrap"><table><thead><tr><th>Student</th><th>Subject</th><th>Total</th><th>Grade</th><th>Status</th></tr></thead><tbody>
+    ${classResults.length ? classResults.map(r=>`
+      <tr>
+        <td>${esc((students.find(s=>s.id===r.studentId)||{}).fullName || r.studentId)}</td>
+        <td>${esc(r.subjectName||"-")}</td>
+        <td>${r.total ?? "-"}</td>
+        <td>${esc(r.grade||"-")}</td>
+        <td><span class="badge badge-${esc(r.status||'draft')}">${esc(r.status||'-')}</span></td>
+      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">No results recorded for this term yet.</td></tr>`}
+    </tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Class Students (${classStudents.length})</h3>
+      <button class="btn btn-primary btn-sm" id="co-add-student">+ Register Student</button>
+    </div>
+    <p class="small-note" style="margin-bottom:12px;">As Class Teacher you can register new students directly into ${esc(className)}, or edit the ones already here. Students from other classes never appear on this page.</p>
+    <div class="table-wrap"><table><thead><tr><th>Photo</th><th>Name</th><th>Admission No</th><th>House</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${classStudents.length ? classStudents.map(s=>`
+      <tr>
+        <td><div style="width:34px;height:34px;border-radius:8px;background:var(--purple-100);color:var(--purple-700);display:flex;align-items:center;justify-content:center;font-weight:700;">${esc((s.fullName||"?")[0])}</div></td>
+        <td><b>${esc(s.fullName)}</b></td>
+        <td>${esc(s.admissionNo)}</td>
+        <td>${esc(s.house||"—")}</td>
+        <td><span class="badge ${s.status==='archived'?'badge-rejected':'badge-published'}">${esc(s.status||'active')}</span></td>
+        <td>
+          <button class="btn icon-btn" data-edit-costu="${s.id}" title="Edit">✏️</button>
+          <button class="btn btn-outline btn-sm" data-term-record="${s.id}">Term Record</button>
+          <a class="btn btn-outline btn-sm" href="#/report/${s.id}">Report Card</a>
+        </td>
+      </tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No students in this class yet — use "Register Student" above to add the first one.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+
+  $("#co-term").addEventListener("change", e=>{ state.currentTerm = e.target.value; renderClassOverview($("#content")); });
+
+  $("#co-add-student").onclick = ()=> openStudentModal(classesForModal, null, classId);
+  $all("[data-edit-costu]").forEach(b=> b.onclick = ()=>{
+    const s = classStudents.find(x=>x.id===b.dataset.editCostu);
+    openStudentModal(classesForModal, s, classId);
+  });
+
+  $all("[data-term-record]").forEach(b=> b.onclick = async ()=>{
+    const sid = b.dataset.termRecord;
+    const trDoc = await db.collection("termRemarks").doc(`${sid}_${session.id}_${term}`).get();
+    openTermRecordModal(sid, session.id, term, trDoc.exists ? trDoc.data() : {}, ()=>renderClassOverview($("#content")));
+  });
+}
+
+/* =========================================================================
+   20. RESULTS OVERVIEW (admin/principal read-only grid)
+   ========================================================================= */
+
+async function renderResultsOverview(content) {
+
+    const [results, session, students] = await Promise.all([
+        fetchAll("results"),
+        getCurrentSession(),
+        fetchAll("students")
+    ]);
+
+    const studentById = {};
+    students.forEach(s => { studentById[s.id] = s; });
+
+    const term = state.currentTerm || "first";
+
+    const filtered = session
+        ? results.filter(r => {
+            const resultSessionId = String(r.sessionId || "").trim();
+
+            const resultTerm = String(r.term || "")
+                .toLowerCase()
+                .trim();
+
+            const currentTerm = String(term || "")
+                .toLowerCase()
+                .trim();
+
+            return (
+                resultSessionId === String(session.id || "").trim() &&
+                resultTerm === currentTerm
+            );
+        })
+        : [];
+
+    const byStatus = status =>
+        filtered.filter(r => r.status === status).length;
+
+    content.innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h3>
+          Results Overview — ${session ? esc(session.name) : "No Active Session"}
+          · ${termLabel(term)}
+        </h3>
+
+        <select id="ro-term">
+          ${TERMS.map(t => `
+            <option value="${t.id}" ${t.id === term ? "selected" : ""}>
+              ${t.label}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom:8px;">
+        <div class="stat-card">
+          <div class="lbl">Draft</div>
+          <div class="val">${byStatus("draft")}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="lbl">Submitted</div>
+          <div class="val">${byStatus("submitted")}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="lbl">Approved</div>
+          <div class="val">${byStatus("approved")}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="lbl">Published</div>
+          <div class="val">${byStatus("published")}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="lbl">Rejected</div>
+          <div class="val">${byStatus("rejected")}</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Subject</th>
+              <th>Total</th>
+              <th>Grade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${
+              filtered.length
+                ? filtered.slice(0, 300).map(r => {
+                    const student = studentById[r.studentId];
+                    const studentName = student ? student.fullName : (r.studentId || "-");
+                    return `
+                    <tr>
+                      <td>${esc(studentName)}</td>
+                      <td>${esc(r.className || "-")}</td>
+                      <td>${esc(r.subjectName || "-")}</td>
+                      <td>${esc(r.total ?? "-")}</td>
+                      <td>${esc(r.grade || "-")}</td>
+                      <td>
+                        <span class="badge badge-${esc(r.status || "draft")}">
+                          ${esc(r.status || "-")}
+                        </span>
+                      </td>
+                    </tr>
+                  `;
+                  }).join("")
+                : `
+                    <tr>
+                      <td colspan="6" style="text-align:center;color:var(--ink-soft);">
+                        No results recorded for this term yet.
+                      </td>
+                    </tr>
+                  `
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.querySelector("#ro-term").addEventListener("change", e => {
+    state.currentTerm = e.target.value;
+    renderResultsOverview(document.querySelector("#content"));
+  });
+}
+
+/* =========================================================================
+   21. APPROVE & PUBLISH (Principal / Admin)
+   ========================================================================= */
+async function renderApproveResults(content){
+  const [classes, session] = await Promise.all([fetchAll("classes","name"), getCurrentSession()]);
+  if(!session){ content.innerHTML = `<div class="empty-state">No academic session configured yet.</div>`; return; }
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Approve &amp; Publish Results</h3></div>
+    <div class="field-row">
+      <div class="field"><label>Class</label><select id="ap-class"><option value="">Select a class…</option>${classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>
+      <div class="field"><label>Term</label><select id="ap-term">${TERMS.map(t=>`<option value="${t.id}" ${t.id===state.currentTerm?'selected':''}>${t.label}</option>`).join("")}</select></div>
+    </div>
+  </div>
+  <div id="ap-body"></div>`;
+
+  async function load(){
+    const classId = $("#ap-class").value;
+    const term = $("#ap-term").value;
+    if(!classId){ $("#ap-body").innerHTML = ""; return; }
+    $("#ap-body").innerHTML = `<div class="empty-state">Loading…</div>`;
+    const [resultsSnap, studentsSnap] = await Promise.all([
+      db.collection("results").where("classId","==",classId).where("sessionId","==",session.id).where("term","==",term).get(),
+      db.collection("students").where("classId","==",classId).get()
+    ]);
+    const results = resultsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const students = studentsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>s.status!=="archived");
+
+    // group by student
+    const byStudent = {};
+    students.forEach(s=> byStudent[s.id] = {student:s, subjects:[]});
+    results.forEach(r=>{ if(byStudent[r.studentId]) byStudent[r.studentId].subjects.push(r); });
+
+    // compute class-wide average per student for position
+    const withAvg = Object.values(byStudent).map(x=>{
+      const totals = x.subjects.map(s=>s.total).filter(n=>typeof n==='number');
+      const avg = totals.length ? totals.reduce((a,b)=>a+b,0)/totals.length : null;
+      return {...x, avg};
+    }).sort((a,b)=> (b.avg??-1) - (a.avg??-1));
+    let pos=0, lastAvg=null, rankMap={};
+    withAvg.forEach((x,i)=>{
+      if(x.avg===null){ rankMap[x.student.id]="—"; return; }
+      if(x.avg !== lastAvg){ pos = i+1; lastAvg = x.avg; }
+      rankMap[x.student.id] = pos;
+    });
+
+    const termRemarksSnap = await Promise.all(students.map(s=> db.collection("termRemarks").doc(`${s.id}_${session.id}_${term}`).get()));
+    const trMap = {}; students.forEach((s,i)=> trMap[s.id] = termRemarksSnap[i].exists ? termRemarksSnap[i].data() : {});
+
+    $("#ap-body").innerHTML = `
+    <div class="panel">
+      <div class="table-wrap"><table><thead><tr><th>Student</th><th>Subjects Recorded</th><th>Avg</th><th>Position</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      ${Object.values(byStudent).map(x=>{
+        const submittedCount = x.subjects.filter(s=>s.status==="submitted").length;
+        const allApproved = x.subjects.length>0 && x.subjects.every(s=>s.status==="approved"||s.status==="published");
+        const anyPublished = x.subjects.some(s=>s.status==="published");
+        const anyRejected = x.subjects.some(s=>s.status==="rejected");
+        const tr = trMap[x.student.id] || {};
+        return `<tr>
+          <td>${esc(x.student.fullName)}</td>
+          <td>${x.subjects.length} recorded (${submittedCount} submitted)</td>
+          <td>${x.avg? x.avg.toFixed(1):'—'}</td>
+          <td>${rankMap[x.student.id]}</td>
+          <td>${anyPublished? '<span class="badge badge-published">Published</span>' : allApproved? '<span class="badge badge-approved">Approved</span>' : anyRejected? '<span class="badge badge-rejected">Rejected</span>' : '<span class="badge badge-submitted">Pending</span>'}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" data-remark="${x.student.id}">Term Record</button>
+            <button class="btn btn-outline btn-sm" data-approve="${x.student.id}">Approve</button>
+            <button class="btn btn-danger btn-sm" data-reject="${x.student.id}">Reject</button>
+            <button class="btn btn-primary btn-sm" data-publish="${x.student.id}" ${!tr.principalRemark?'disabled title="Add Principal remark first"':''}>Publish</button>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No students in this class.</td></tr>`}
+      </tbody></table></div>
+    </div>`;
+
+    $all("[data-remark]").forEach(b=> b.onclick = ()=> openTermRecordModal(b.dataset.remark, session.id, term, trMap[b.dataset.remark]||{}, ()=>load()));
+    $all("[data-approve]").forEach(b=> b.onclick = async ()=>{
+      const sid = b.dataset.approve;
+      const subj = byStudent[sid].subjects.filter(s=>s.status==="submitted");
+      if(!subj.length){ toast("No submitted results to approve for this student.","error"); return; }
+      const batch = db.batch();
+      subj.forEach(s=> batch.update(db.collection("results").doc(s.id), {status:"approved", approvedBy: state.profile.name, approvedAt: nowStamp()}));
+      await batch.commit();
+      await logAudit("approve_results", {studentId:sid, term, count:subj.length});
+      toast("Results approved","success"); load();
+    });
+    $all("[data-reject]").forEach(b=> b.onclick = async ()=>{
+      const sid = b.dataset.reject;
+      const subj = byStudent[sid].subjects.filter(s=>s.status==="submitted"||s.status==="approved");
+      if(!subj.length){ toast("No submitted/approved results to reject for this student.","error"); return; }
+      const reason = await promptDialog("Why are you rejecting these results? This note will be visible to the subject teacher, and the results will unlock for them to edit and resubmit.", "Reject Results");
+      if(reason===null) return;
+      const batch = db.batch();
+      subj.forEach(s=> batch.update(db.collection("results").doc(s.id), {status:"rejected", rejectionReason: reason||"", rejectedBy: state.profile.name, rejectedAt: nowStamp()}));
+      await batch.commit();
+      await logAudit("reject_results", {studentId:sid, term, count:subj.length, reason});
+      toast("Results rejected and sent back to the teacher","success"); load();
+    });
+    $all("[data-publish]").forEach(b=> b.onclick = async ()=>{
+      const sid = b.dataset.publish;
+      if(await confirmDialog("Publish this student's result? It will become visible to the parent/student and via the public Result Checker.", "Publish")){
+        await publishStudentResult(sid, session, term, byStudent[sid], rankMap[sid], trMap[sid]);
+        toast("Result published","success"); load();
+      }
+    });
+  }
+  $("#ap-class").addEventListener("change", load);
+  $("#ap-term").addEventListener("change", load);
+}
+
+/* ---------------------------------------------------------------------
+   Preset remark suggestions — used for Teacher's / Principal's /
+   Guidance Counsellor's remarks. Each dropdown always includes an
+   "Other (type manually)" option that reveals a free-text box.
+   --------------------------------------------------------------------- */
+const REMARK_SUGGESTIONS = {
+  teacher: [
+    "Excellent performance this term, keep it up!",
+    "A very good result. Consistent effort was shown.",
+    "Good result, but more effort is needed in some subjects.",
+    "Satisfactory performance. Can do better with more focus.",
+    "Fair result. Needs to pay closer attention in class.",
+    "Below expectation. Requires closer monitoring at home.",
+    "A hardworking and well-behaved pupil.",
+    "Shows great improvement from last term."
+  ],
+  principal: [
+    "Excellent result. Keep up the good work.",
+    "A commendable performance this term.",
+    "Good effort shown. Encourage more reading at home.",
+    "Satisfactory result, more improvement expected next term.",
+    "Fair performance. Needs more supervision at home.",
+    "Result reviewed and approved for publication.",
+    "More effort required to improve overall performance."
+  ],
+  guidance: [
+    "Relates well with peers and staff.",
+    "Shows good leadership qualities.",
+    "Needs to improve on self-discipline.",
+    "A respectful and well-mannered pupil.",
+    "Needs guidance on time management.",
+    "Displays a positive attitude towards learning."
+  ]
+};
+
+function remarkPickerHtml(kind, fieldId, existingValue){
+  const options = REMARK_SUGGESTIONS[kind] || [];
+  const isPreset = options.includes(existingValue);
+  return `
+    <select id="${fieldId}-select">
+      <option value="">— Choose a suggested remark —</option>
+      ${options.map(o=>`<option value="${esc(o)}" ${existingValue===o?'selected':''}>${esc(o)}</option>`).join("")}
+      <option value="__other__" ${(!isPreset && existingValue) ? 'selected' : ''}>Other (type manually)</option>
+    </select>
+    <textarea id="${fieldId}-custom" rows="2" placeholder="Type your own remark…" style="margin-top:8px;${(!isPreset && existingValue) ? '' : 'display:none;'}">${esc((!isPreset && existingValue) ? existingValue : '')}</textarea>
+  `;
+}
+function wireRemarkPicker(fieldId, body){
+  const select = $(`#${fieldId}-select`, body);
+  const custom = $(`#${fieldId}-custom`, body);
+  if(!select || !custom) return;
+  select.addEventListener("change", ()=>{
+    if(select.value === "__other__"){ custom.style.display = "block"; custom.focus(); }
+    else { custom.style.display = "none"; }
+  });
+}
+function getRemarkValue(fieldId, body){
+  const select = $(`#${fieldId}-select`, body);
+  const custom = $(`#${fieldId}-custom`, body);
+  if(!select) return "";
+  if(select.value === "__other__") return (custom ? custom.value.trim() : "");
+  return select.value;
+}
+
+const CHARACTER_TRAITS = ["Attendance to Class","Attentiveness","Punctuality / Lateness","Neatness","Politeness / Manners","Self Control","Relationship with Others"];
+const PRACTICAL_SKILLS = ["Hand Writing","Drama","Music","Crafts","Clubs / Hobbies","Sport / Games"];
+const PSYCHOMOTOR_SKILLS = ["Creativity","Verbal Fluency","Games","Sport","Handling Tools","Drawing / Painting","Musical Skills"];
+const GRADE_OPTIONS_AE = ["A","B","C","D","E"];
+
+function gradeSelectHtml(name, existingValue){
+  return `<select data-trait="${esc(name)}">
+    <option value="">-</option>
+    ${GRADE_OPTIONS_AE.map(g=>`<option value="${g}" ${existingValue===g?'selected':''}>${g}</option>`).join("")}
+  </select>`;
+}
+
+/* ---------------------------------------------------------------------
+   Comprehensive Term Record modal — attendance, character development,
+   practical/psychomotor skills, promotion (3rd term only), award, and
+   the three remark boxes (Teacher / Principal / Guidance Counsellor).
+   Field permissions:
+     - Class Teacher (or Admin): attendance, character development,
+       practical/psychomotor skills, award, vacation/resumption dates,
+       promotion, teacher's remark.
+     - Principal (or Admin): principal's remark, guidance remark.
+   --------------------------------------------------------------------- */
+function openTermRecordModal(studentId, sessionId, term, existing, onSaved){
+  const role = state.profile.role;
+  const isAdmin = role === "admin";
+  const isPrincipal = role === "principal" || isAdmin;
+  const isClassTeacher = isAdmin || (role === "teacher" && state.profile.classTeacherOf) || isPrincipal;
+  const isThirdTerm = term === "third";
+
+  const characterVals = existing.characterDevelopment || {};
+  const practicalVals = existing.practicalSkills || {};
+  const psychomotorVals = existing.psychomotorSkills || {};
+
+  openModal("Student Term Record", `
+    <div class="field-row">
+      <div class="field"><label>Days Present</label><input type="number" id="rm-present" value="${existing.attendancePresent??''}" ${isClassTeacher?'':'disabled'}></div>
+      <div class="field"><label>Total School Days</label><input type="number" id="rm-total" value="${existing.attendanceTotal??''}" ${isClassTeacher?'':'disabled'}></div>
+    </div>
+
+    <div class="rc-section-title" style="margin-top:4px;">Character Development (Grade A–E):</div>
+    <div class="field-row" style="flex-wrap:wrap;">
+      ${CHARACTER_TRAITS.map(t=>`<div class="field" style="min-width:220px;"><label>${esc(t)}</label>${gradeSelectHtml(t, characterVals[t])}</div>`).join("")}
+    </div>
+
+    <div class="rc-section-title">Practical Skills (Grade A–E):</div>
+    <div class="field-row" style="flex-wrap:wrap;">
+      ${PRACTICAL_SKILLS.map(t=>`<div class="field" style="min-width:220px;"><label>${esc(t)}</label>${gradeSelectHtml(t, practicalVals[t])}</div>`).join("")}
+    </div>
+
+    <div class="rc-section-title">Psychomotor Skills — Nursery/Primary/Creche (Grade A–E):</div>
+    <div class="field-row" style="flex-wrap:wrap;">
+      ${PSYCHOMOTOR_SKILLS.map(t=>`<div class="field" style="min-width:220px;"><label>${esc(t)}</label>${gradeSelectHtml(t, psychomotorVals[t])}</div>`).join("")}
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Award / Prize Won (optional)</label><input id="rm-award" value="${esc(existing.award||'')}" ${isClassTeacher?'':'disabled'}></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date of Vacation</label><input type="date" id="rm-vacation" value="${existing.vacationDate||''}" ${isClassTeacher?'':'disabled'}></div>
+      <div class="field"><label>Date of Resumption (next term)</label><input type="date" id="rm-resumption" value="${existing.resumptionDate||''}" ${isClassTeacher?'':'disabled'}></div>
+    </div>
+
+    ${isThirdTerm ? `
+    <div class="rc-section-title">Third Term Promotion:</div>
+    <div class="field"><label>Promoted To (class name, or "Repeat")</label><input id="rm-promotion" value="${esc(existing.promotion||'')}" placeholder="e.g. JSS 2A, or Repeat JSS 1A" ${isClassTeacher?'':'disabled'}></div>
+    ` : ``}
+
+    <div class="rc-section-title">Class Teacher's Remark (dropdown suggestion, or type your own):</div>
+    <div class="field">${isClassTeacher ? remarkPickerHtml('teacher','rm-teacher', existing.teacherRemark||'') : `<textarea rows="2" disabled>${esc(existing.teacherRemark||'(Not entered)')}</textarea>`}</div>
+
+    <div class="rc-section-title">Principal's Remark (dropdown suggestion, or type your own):</div>
+    <div class="field">${isPrincipal ? remarkPickerHtml('principal','rm-principal', existing.principalRemark||'') : `<textarea rows="2" disabled>${esc(existing.principalRemark||'(Not entered)')}</textarea>`}</div>
+
+    <div class="rc-section-title">Guidance Counsellor's Remark (dropdown suggestion, or type your own):</div>
+    <div class="field">${isPrincipal ? remarkPickerHtml('guidance','rm-guidance', existing.guidanceRemark||'') : `<textarea rows="2" disabled>${esc(existing.guidanceRemark||'(Not entered)')}</textarea>`}</div>
+
+    <div class="modal-actions"><button class="btn btn-outline" id="rm-cancel">Cancel</button><button class="btn btn-primary" id="rm-save">Save Term Record</button></div>`,
+    body=>{
+      if(isClassTeacher) wireRemarkPicker('rm-teacher', body);
+      if(isPrincipal){ wireRemarkPicker('rm-principal', body); wireRemarkPicker('rm-guidance', body); }
+
+      $("#rm-cancel",body).onclick = closeModal;
+      $("#rm-save",body).onclick = async ()=>{
+        const payload = { studentId, sessionId, term, updatedAt: nowStamp() };
+
+        if(isClassTeacher){
+          payload.attendancePresent = parseInt($("#rm-present",body).value)||0;
+          payload.attendanceTotal = parseInt($("#rm-total",body).value)||0;
+          payload.award = $("#rm-award",body).value.trim();
+          payload.vacationDate = $("#rm-vacation",body).value;
+          payload.resumptionDate = $("#rm-resumption",body).value;
+          payload.teacherRemark = getRemarkValue('rm-teacher', body);
+
+          const cd = {}; CHARACTER_TRAITS.forEach(t=>{ const v = $(`select[data-trait="${t}"]`, body); if(v && v.value) cd[t]=v.value; });
+          payload.characterDevelopment = cd;
+
+          const ps = {}; PRACTICAL_SKILLS.forEach(t=>{ const v = $all(`select[data-trait]`, body).find(el=>el.dataset.trait===t); if(v && v.value) ps[t]=v.value; });
+          payload.practicalSkills = ps;
+
+          const pm = {}; PSYCHOMOTOR_SKILLS.forEach(t=>{ const v = $all(`select[data-trait]`, body).find(el=>el.dataset.trait===t); if(v && v.value) pm[t]=v.value; });
+          payload.psychomotorSkills = pm;
+
+          if(isThirdTerm){
+            const promoEl = $("#rm-promotion", body);
+            if(promoEl) payload.promotion = promoEl.value.trim();
+          }
+        }
+
+        if(isPrincipal){
+          payload.principalRemark = getRemarkValue('rm-principal', body);
+          payload.guidanceRemark = getRemarkValue('rm-guidance', body);
+        }
+
+        await db.collection("termRemarks").doc(`${studentId}_${sessionId}_${term}`).set(payload, {merge:true});
+        await logAudit("save_term_record", {studentId, term});
+        closeModal(); toast("Term record saved","success"); onSaved();
+      };
+    });
+}
+
+async function publishStudentResult(studentId, session, term, group, position, tr){
+  const studentDoc = await db.collection("students").doc(studentId).get();
+  const student = studentDoc.data();
+  const totalInClassSnap = await db.collection("students").where("classId","==",student.classId).get();
+  const totalInClass = totalInClassSnap.docs.filter(d=> (d.data().status||'active')!=='archived').length;
+
+  const batch = db.batch();
+  group.subjects.forEach(s=> batch.update(db.collection("results").doc(s.id), {status:"published", publishedAt: nowStamp()}));
+  batch.set(db.collection("termRemarks").doc(`${studentId}_${session.id}_${term}`), {status:"published", position, publishedAt: nowStamp()}, {merge:true});
+  await batch.commit();
+
+  const publicId = `${student.admissionNo}_${student.pin}_${session.name}_${term}`.replace(/\s+/g,"");
+  await db.collection("publicResults").doc(publicId).set({
+    studentId, studentName: student.fullName, admissionNo: student.admissionNo,
+    className: student.className, section: student.section, house: student.house || "",
+    sessionId: session.id, sessionName: session.name, term, position, totalInClass,
+    subjects: group.subjects.map(s=>({subjectName:s.subjectName, test1:s.test1, test2:s.test2, test3:s.test3, exam:s.exam, bf:s.bf||0, total:s.total, cumScore:s.cumScore ?? s.total, grade:s.grade})),
+    teacherRemark: tr.teacherRemark || "", principalRemark: tr.principalRemark || "", guidanceRemark: tr.guidanceRemark || "",
+    attendancePresent: tr.attendancePresent||0, attendanceTotal: tr.attendanceTotal||0,
+    characterDevelopment: tr.characterDevelopment || {}, practicalSkills: tr.practicalSkills || {}, psychomotorSkills: tr.psychomotorSkills || {},
+    award: tr.award || "", vacationDate: tr.vacationDate || "", resumptionDate: tr.resumptionDate || "",
+    promotion: tr.promotion || "",
+    publishedAt: nowStamp(), publicId
+  });
+  await logAudit("publish_result", {studentId, term, publicId});
+}
+
+/* =========================================================================
+   22. REPORT CARD RENDERING
+   ========================================================================= */
+async function renderReportCardRoute(content){
+  const parts = location.hash.replace("#/report/","").split("/");
+  const studentId = parts[0];
+  const studentDoc = await db.collection("students").doc(studentId).get();
+  if(!studentDoc.exists){ content.innerHTML = `<div class="empty-state">Student not found.</div>`; return; }
+  const student = studentDoc.data();
+  const session = await getCurrentSession();
+  const term = state.currentTerm;
+  const [resultsSnap, trDoc, totalInClassSnap] = await Promise.all([
+    db.collection("results").where("studentId","==",studentId).where("sessionId","==",session.id).where("term","==",term).get(),
+    db.collection("termRemarks").doc(`${studentId}_${session.id}_${term}`).get(),
+    db.collection("students").where("classId","==",student.classId).get()
+  ]);
+  const subjects = resultsSnap.docs.map(d=>d.data());
+  const tr = trDoc.exists ? trDoc.data() : {};
+  const totalInClass = totalInClassSnap.docs.filter(d=> (d.data().status||'active')!=='archived').length;
+  const data = {
+    studentName: student.fullName, admissionNo: student.admissionNo, className: student.className, section: student.section,
+    house: student.house || "", totalInClass,
+    sessionName: session.name, term, position: tr.position || "—",
+    subjects: subjects.map(s=>({subjectName:s.subjectName, test1:s.test1, test2:s.test2, test3:s.test3, exam:s.exam, bf:s.bf||0, total:s.total, cumScore:s.cumScore ?? s.total, grade:s.grade})),
+    teacherRemark: tr.teacherRemark || "(Not yet entered by class teacher)",
+    principalRemark: tr.principalRemark || "(Not yet entered by Principal)",
+    guidanceRemark: tr.guidanceRemark || "(Not yet entered)",
+    attendancePresent: tr.attendancePresent||0, attendanceTotal: tr.attendanceTotal||0,
+    characterDevelopment: tr.characterDevelopment || {}, practicalSkills: tr.practicalSkills || {}, psychomotorSkills: tr.psychomotorSkills || {},
+    award: tr.award || "", vacationDate: tr.vacationDate || "", resumptionDate: tr.resumptionDate || "",
+    promotion: tr.promotion || "",
+    publicId: `${student.admissionNo}_${student.pin}_${session.name}_${term}`.replace(/\s+/g,"")
+  };
+  content.innerHTML = `<div id="report-target">${renderReportCardHTML(data,false)}</div>`;
+  wireReportCardButtons(data);
+}
+
+function skillsTableHtml(title, traitList, values){
+  return `
+    <div class="rc-section-title">${esc(title)}</div>
+    <table class="rc-skills-table" style="width:100%;">
+      ${traitList.map(t=>`<tr><td class="rc-skill-name">${esc(t)}</td><td class="rc-skill-grade">${esc(values[t]||'-')}</td></tr>`).join("")}
+    </table>
+  `;
+}
+
+function renderReportCardHTML(d, publicView){
+  const avg = d.subjects.length ? (d.subjects.reduce((a,s)=>a+(s.total||0),0)/d.subjects.length).toFixed(1) : "—";
+  const daysOut = (d.attendanceTotal||0) - (d.attendancePresent||0);
+  const isThirdTerm = d.term === "third";
+  const hasPsychomotor = d.psychomotorSkills && Object.keys(d.psychomotorSkills).length > 0;
+  return `
+  <div class="report-wrap">
+    <div class="no-print" style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" id="rc-print">🖨️ Print</button>
+      <button class="btn btn-primary btn-sm" id="rc-pdf">⬇️ Download PDF</button>
+    </div>
+    <div class="report-card" id="rc-card">
+      <div class="rc-head">
+        <div class="rc-logo">P</div>
+        <div>
+          <h2>${esc(SCHOOL.name)}</h2>
+          <p>${esc(SCHOOL.address)}</p>
+          <p>${SCHOOL.phones.join(" · ")} &nbsp;·&nbsp; "${esc(SCHOOL.motto)}"</p>
+        </div>
+      </div>
+      <div class="rc-title">Terminal Report Card</div>
+      <div class="rc-info-grid">
+        <div><b>Student:</b> ${esc(d.studentName)}</div>
+        <div><b>Admission No:</b> ${esc(d.admissionNo)}</div>
+        <div><b>Class:</b> ${esc(d.className)}</div>
+        <div><b>House:</b> ${esc(d.house || "—")}</div>
+        <div><b>Total in Class:</b> ${esc(String(d.totalInClass ?? "—"))}</div>
+        <div><b>Session:</b> ${esc(d.sessionName)}</div>
+        <div><b>Term:</b> ${esc(termLabel(d.term))}</div>
+        <div><b>Position:</b> ${esc(String(d.position))}</div>
+        <div><b>Attendance:</b> ${d.attendancePresent}/${d.attendanceTotal} days (${daysOut} out of ${d.attendanceTotal||0})</div>
+        <div><b>Average Score:</b> ${avg}</div>
+      </div>
+      <table class="rc-table" style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+        <thead><tr><th>Subject</th><th>Test 1</th><th>Test 2</th><th>Test 3</th><th>Exam</th><th>B/F</th><th>Total</th><th>Cum. Score</th><th>Grade</th></tr></thead>
+        <tbody>
+        ${d.subjects.length ? d.subjects.map(s=>`<tr><td>${esc(s.subjectName)}</td><td>${s.test1??'-'}</td><td>${s.test2??'-'}</td><td>${s.test3??'-'}</td><td>${s.exam??'-'}</td><td>${s.bf??0}</td><td><b>${s.total??'-'}</b></td><td>${s.cumScore??s.total??'-'}</td><td>${esc(s.grade||'-')}</td></tr>`).join("")
+          : `<tr><td colspan="9" style="text-align:center;color:#888;">No published results for this term yet.</td></tr>`}
+        </tbody>
+      </table>
+
+      ${d.award ? `<div class="rc-meta-row"><span><b>Award / Prize Won:</b> ${esc(d.award)}</span></div>` : ``}
+
+      <div class="rc-skills-grid">
+        ${skillsTableHtml("Character Development", CHARACTER_TRAITS, d.characterDevelopment)}
+        ${skillsTableHtml("Practical Skills", PRACTICAL_SKILLS, d.practicalSkills)}
+      </div>
+      ${hasPsychomotor ? `<div style="margin-top:14px;">${skillsTableHtml("Psychomotor Skills", PSYCHOMOTOR_SKILLS, d.psychomotorSkills)}</div>` : ``}
+
+      <div class="rc-remarks">
+        <div class="rc-remark-box"><b>Class Teacher's Remark</b>${esc(d.teacherRemark)}</div>
+        <div class="rc-remark-box"><b>Principal's Remark</b>${esc(d.principalRemark)}</div>
+      </div>
+      <div class="rc-remarks">
+        <div class="rc-remark-box"><b>Guidance Counsellor's Remark</b>${esc(d.guidanceRemark)}</div>
+        <div class="rc-remark-box"><b>Vacation / Resumption</b>Vacation: ${esc(d.vacationDate||'—')}<br>Resumes: ${esc(d.resumptionDate||'—')}</div>
+      </div>
+
+      ${isThirdTerm ? `<div class="rc-promo-box">${d.promotion ? `Promoted To: ${esc(d.promotion)}` : "Third Term — Promotion status not yet entered"}</div>` : ``}
+
+      <div class="rc-sign-row">
+        <div>Class Teacher's Signature</div>
+        <div>Principal's Signature</div>
+      </div>
+      <div class="rc-qr" id="rc-qr-${publicView?'pub':'priv'}"></div>
+    </div>
+  </div>`;
+}
+
+function wireReportCardButtons(d){
+  try{
+    const el = document.getElementById('rc-qr-pub') || document.getElementById('rc-qr-priv');
+    if(el && window.QRCode && d.publicId){
+      el.innerHTML = "";
+      new QRCode(el, {text: `${location.origin}${location.pathname}#/verify?id=${encodeURIComponent(d.publicId)}`, width:96, height:96, colorDark:"#2E1650"});
+    }
+  }catch(e){ /* qr optional */ }
+  const printBtn = $("#rc-print");
+  const pdfBtn = $("#rc-pdf");
+  if(printBtn) printBtn.onclick = ()=> window.print();
+  if(pdfBtn) pdfBtn.onclick = ()=>{
+    const card = $("#rc-card");
+    html2pdf().set({margin:10, filename:`${d.studentName||'Report'}-${d.term||''}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(card).save();
+  };
+}
+
+/* =========================================================================
+   22b. BULK DOWNLOAD RESULTS (Admin / Principal) — all / by class / individual
+   ========================================================================= */
+async function renderDownloadResults(content){
+  const [classes, session] = await Promise.all([fetchAll("classes","name"), getCurrentSession()]);
+  if(!session){ content.innerHTML = `<div class="empty-state">No academic session configured yet.</div>`; return; }
+
+  content.innerHTML = `
+  <div class="panel">
+    <div class="panel-head"><h3>Download Results</h3></div>
+    <p class="small-note">Download published report cards as a single combined PDF — for all students, for one class, or for one individual student. Only <b>published</b> results are included.</p>
+    <div class="field-row">
+      <div class="field"><label>Scope</label>
+        <select id="dr-scope">
+          <option value="all">All Students</option>
+          <option value="class">One Class</option>
+          <option value="individual">Individual Student</option>
+        </select>
+      </div>
+      <div class="field"><label>Term</label>
+        <select id="dr-term">${TERMS.map(t=>`<option value="${t.id}" ${t.id===state.currentTerm?'selected':''}>${t.label}</option>`).join("")}</select>
+      </div>
+    </div>
+    <div class="field" id="dr-class-field" style="display:none;">
+      <label>Class</label>
+      <select id="dr-class"><option value="">Select a class…</option>${classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select>
+    </div>
+    <div class="field" id="dr-student-field" style="display:none;">
+      <label>Search Student (name or admission no)</label>
+      <input id="dr-student-search" placeholder="Start typing…">
+      <div id="dr-student-results" class="small-note" style="margin-top:6px;"></div>
+      <input type="hidden" id="dr-student-id">
+    </div>
+    <button class="btn btn-primary" id="dr-download">⬇️ Generate &amp; Download PDF</button>
+    <div id="dr-status" class="small-note" style="margin-top:10px;"></div>
+  </div>
+  <div id="dr-print-area" style="position:fixed;left:-9999px;top:0;"></div>`;
+
+  $("#dr-scope").addEventListener("change", ()=>{
+    const scope = $("#dr-scope").value;
+    $("#dr-class-field").style.display = scope==="class" ? "block" : "none";
+    $("#dr-student-field").style.display = scope==="individual" ? "block" : "none";
+  });
+
+  let allStudents = null;
+  $("#dr-student-search").addEventListener("input", async ()=>{
+    if(!allStudents) allStudents = await fetchAll("students");
+    const q = $("#dr-student-search").value.trim().toLowerCase();
+    const matches = q ? allStudents.filter(s=> s.status!=="archived" && ((s.fullName||"").toLowerCase().includes(q) || (s.admissionNo||"").toLowerCase().includes(q))).slice(0,8) : [];
+    $("#dr-student-results").innerHTML = matches.map(s=>`<div data-pick="${s.id}" style="padding:6px 0;cursor:pointer;border-bottom:1px solid var(--border);">${esc(s.fullName)} — ${esc(s.admissionNo)}</div>`).join("") || (q ? "No matches." : "");
+    $all("[data-pick]").forEach(el=> el.onclick = ()=>{
+      $("#dr-student-id").value = el.dataset.pick;
+      $("#dr-student-search").value = el.textContent;
+      $("#dr-student-results").innerHTML = "";
+    });
+  });
+
+  $("#dr-download").onclick = async ()=>{
+    const scope = $("#dr-scope").value;
+    const term = $("#dr-term").value;
+    const status = $("#dr-status");
+    const printArea = $("#dr-print-area");
+    status.textContent = "Gathering published results…";
+
+    let query = db.collection("publicResults").where("sessionId","==",session.id).where("term","==",term);
+    if(scope==="class"){
+      const classId = $("#dr-class").value;
+      if(!classId){ toast("Please select a class.","error"); status.textContent=""; return; }
+      query = query.where("className","==", $("#dr-class").selectedOptions[0].textContent);
+    }
+    if(scope==="individual"){
+      const sid = $("#dr-student-id").value;
+      if(!sid){ toast("Please search and select a student.","error"); status.textContent=""; return; }
+    }
+
+    let snap;
+    try{ snap = await query.get(); } catch(e){ toast("Could not query published results: "+e.message, "error"); status.textContent=""; return; }
+    let docs = snap.docs.map(d=>d.data());
+    if(scope==="individual"){
+      const sid = $("#dr-student-id").value;
+      docs = docs.filter(d=> d.studentId === sid);
+    }
+    if(!docs.length){ toast("No published results found for this selection.","error"); status.textContent=""; return; }
+
+    status.textContent = `Building PDF for ${docs.length} report card(s)…`;
+    printArea.innerHTML = docs.map((d,i)=> `<div class="${i < docs.length-1 ? 'page-break':''}">${renderReportCardHTML({
+      studentName:d.studentName, admissionNo:d.admissionNo, className:d.className, house:d.house||"", totalInClass:d.totalInClass,
+      sessionName:d.sessionName, term:d.term, position:d.position, subjects:d.subjects||[],
+      teacherRemark:d.teacherRemark, principalRemark:d.principalRemark, guidanceRemark:d.guidanceRemark,
+      attendancePresent:d.attendancePresent, attendanceTotal:d.attendanceTotal,
+      characterDevelopment:d.characterDevelopment||{}, practicalSkills:d.practicalSkills||{}, psychomotorSkills:d.psychomotorSkills||{},
+      award:d.award, vacationDate:d.vacationDate, resumptionDate:d.resumptionDate, promotion:d.promotion, publicId:d.publicId
+    }, true)}</div>`).join("");
+    // strip the per-card print/PDF buttons from the combined output
+    $all(".no-print", printArea).forEach(el=> el.remove());
+
+    try{
+      await html2pdf().set({margin:8, filename:`Results-${scope}-${term}.pdf`, image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(printArea).save();
+      status.textContent = "Download complete.";
+      await logAudit("bulk_download_results", {scope, term, count: docs.length});
+    }catch(e){
+      toast("PDF generation failed: "+e.message, "error");
+      status.textContent = "";
+    }
+  };
+}
+
+/* =========================================================================
+   23. DEMO DATA SEEDING (admin convenience button)
+   ========================================================================= */
+async function seedDemoData(){
+  if(!(await confirmDialog("This will add sample classes, subjects, a grading scale, an academic session and 4 demo students (one per section). Continue?", "Load Demo Data"))) return;
+  toast("Seeding demo data…");
+  try{
+    const sessionRef = await db.collection("sessions").add({name:"2025/2026", currentTerm:"first", isCurrent:true, createdAt: nowStamp()});
+    const classDefs = [{name:"Nursery 1",section:"NURSERY"},{name:"Primary 3",section:"PRIMARY"},{name:"JSS 2A",section:"JSS"},{name:"SS 2 Science",section:"SSS"}];
+    const classIds = {};
+    for(const c of classDefs){ const ref = await db.collection("classes").add({...c, createdAt: nowStamp()}); classIds[c.section]=ref.id; }
+    const subjectDefs = ["English Language","Mathematics","Basic Science"];
+    const subjectIds = [];
+    for(const name of subjectDefs){ const ref = await db.collection("subjects").add({name, classIds:Object.values(classIds), createdAt: nowStamp()}); subjectIds.push({id:ref.id, name}); }
+    const gradeDefs = [{min:70,max:100,grade:"A",remark:"Excellent"},{min:60,max:69,grade:"B",remark:"Very Good"},{min:50,max:59,grade:"C",remark:"Good"},{min:45,max:49,grade:"D",remark:"Fair"},{min:0,max:44,grade:"E",remark:"Poor"}];
+    for(const g of gradeDefs){ await db.collection("gradingScale").add({...g, createdAt: nowStamp()}); }
+    const studentDefs = [
+      {fullName:"Faith Adebayo", section:"NURSERY", classId:classIds.NURSERY, className:"Nursery 1", gender:"Female"},
+      {fullName:"Emmanuel Ojo", section:"PRIMARY", classId:classIds.PRIMARY, className:"Primary 3", gender:"Male"},
+      {fullName:"Blessing Okafor", section:"JSS", classId:classIds.JSS, className:"JSS 2A", gender:"Female"},
+      {fullName:"David Fashola", section:"SSS", classId:classIds.SSS, className:"SS 2 Science", gender:"Male"},
+    ];
+    for(const s of studentDefs){
+      await db.collection("students").add({...s, admissionNo: genAdmissionNo(s.section), pin: genPin(), status:"active", dob:"", house:"", guardianPhone:"", isDemo:true, createdAt: nowStamp()});
+    }
+    await logAudit("seed_demo_data", {});
+    toast("Demo data loaded! Explore Students, Classes and Subjects.", "success");
+    renderApp($("#app"), location.hash);
+  }catch(err){ toast("Seeding failed: "+err.message, "error"); }
+}
+
+/* =========================================================================
+   24. AUTH STATE BOOTSTRAP
+   ========================================================================= */
+auth.onAuthStateChanged(async user => {
+    state.user = user;
+
+    if (!user) {
+        state.profile = null;
+        render();
+        return;
+    }
+
+    try {
+        const doc = await db.collection("users").doc(user.uid).get();
+
+        if (doc.exists) {
+            state.profile = {
+                id: doc.id,
+                ...doc.data()
+            };
+
+            const sess = await getCurrentSession();
+
+            if (sess) {
+                state.currentTerm =
+                    sess.currentTerm || "first";
+            }
+
+        } else {
+            state.profile = {
+                name: user.email,
+                role: "parent",
+                assignments: [],
+                linkedStudentIds: []
+            };
+
+            toast(
+                "Your account has no role assigned yet. Contact the school admin.",
+                "error"
+            );
+        }
+
+    } catch (e) {
+        console.error(e);
+
+        state.profile = {
+            name: user.email,
+            role: "parent",
+            assignments: []
+        };
+    }
+
+    render();
+});
+
+
+// initial paint while auth resolves
+render();
+
+</script>
+</body>
+</html>
