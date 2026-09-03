@@ -239,6 +239,13 @@ tr:last-child td{border-bottom:none;}
 /* ---------- Result entry grid ---------- */
 .score-input{width:64px;padding:7px;text-align:center;}
 .small-note{font-size:12px;color:var(--ink-soft);}
+.dr-btn{margin-top:4px;}
+.dr-search-results{margin-top:6px;max-height:220px;overflow-y:auto;border-radius:8px;}
+.dr-search-results div[data-pick]{padding:10px 8px !important;font-size:13.5px;}
+.dr-search-results div[data-pick]:hover{background:var(--purple-100);}
+@media (max-width:640px){
+  .dr-btn{width:100%;}
+}
 .pill-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
 .pill-tab{padding:8px 16px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:13.5px;font-weight:600;color:var(--ink-soft);}
 .pill-tab.active{background:var(--purple-700);border-color:var(--purple-700);color:#fff;}
@@ -1143,11 +1150,45 @@ function renderLanding(app){
   ${publicFooter()}
   `;
   wirePublicHeader();
+  scrollLandingToHashTarget();
+}
+
+/* Scrolls to the matching section on the landing page (About, Academics,
+   Contact) or to the top for Home — used both after a hash-driven
+   re-render and for same-hash clicks (e.g. clicking "Home" again while
+   already at the top of "#/", which never fires a hashchange event). */
+function scrollLandingToHashTarget(hashOverride){
+  const raw = (hashOverride || location.hash || "#/").split("?")[0];
+  const targetId = raw.replace(/^#\/?/, "").trim();
+  if(targetId){
+    const el = document.getElementById(targetId);
+    if(el){ setTimeout(()=> el.scrollIntoView({behavior:"smooth", block:"start"}), 30); return; }
+  }
+  setTimeout(()=> window.scrollTo({top:0, behavior:"smooth"}), 30);
 }
 
 function wirePublicHeader(){
   const toggle = $("#menu-toggle");
   if(toggle){ toggle.onclick = ()=> $("#pub-links").classList.toggle("open"); }
+  // Home / About / Academics / Contact must actually respond on click —
+  // including when the hash isn't changing (e.g. clicking "Home" again
+  // while already at the top), which the router's hashchange listener
+  // alone would silently ignore.
+  $all(".pub-links a[href^='#/']").forEach(a=>{
+    a.addEventListener("click", e=>{
+      const targetHash = a.getAttribute("href");
+      const links = $("#pub-links");
+      if(links) links.classList.remove("open");
+      const isLandingTarget = targetHash==="#/" || targetHash.startsWith("#/about") || targetHash.startsWith("#/academics") || targetHash.startsWith("#/contact");
+      if(isLandingTarget && location.hash === targetHash){
+        e.preventDefault();
+        scrollLandingToHashTarget(targetHash);
+      }
+      // otherwise default navigation fires; the hashchange listener
+      // re-renders the landing page and scrollLandingToHashTarget()
+      // runs again automatically at the end of renderLanding().
+    });
+  });
 }
 
 /* ---------------------------------------------------------------------
@@ -1203,7 +1244,7 @@ function renderResultChecker(app){
       } else {
         await logAudit("public_result_check", {adm, session, term});
         $("#rc-result").innerHTML = renderReportCardHTML(snap.data(), true);
-        setTimeout(()=> wireReportCardButtons(snap.data()), 30);
+        setTimeout(()=> wireReportCardButtons(snap.data(), true), 30);
         $("#rc-result").scrollIntoView({behavior:"smooth"});
       }
     }catch(err){
@@ -2189,7 +2230,7 @@ function openStudentModal(classes, student, lockClassId){
       <div class="field"><label>Date of Birth</label><input type="date" id="sm-dob" value="${student?.dob||''}"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Admission No ${isEdit?'':'(auto-generated if left blank)'}</label><input id="sm-adm" value="${esc(student?.admissionNo||'')}"></div>
+      <div class="field"><label>Admission No ${isEdit?'(editable — used for result checker login, change with care)':'(auto-generated if left blank)'}</label><input id="sm-adm" value="${esc(student?.admissionNo||'')}"></div>
       <div class="field"><label>Status</label><select id="sm-status"><option value="active" ${student?.status==='active'?'selected':''}>Active</option><option value="archived" ${student?.status==='archived'?'selected':''}>Archived</option></select></div>
     </div>
     <div class="field-row">
@@ -2206,6 +2247,7 @@ function openStudentModal(classes, student, lockClassId){
         const classId = classSel.value;
         const className = classSel.selectedOptions[0]?.textContent || "";
         const section = classSel.selectedOptions[0]?.dataset.section || "PRIMARY";
+        const admInput = $("#sm-adm",body).value.trim();
         const payload = {
           fullName: name,
           gender: $("#sm-gender",body).value,
@@ -2218,11 +2260,17 @@ function openStudentModal(classes, student, lockClassId){
         };
         try{
           if(isEdit){
+            // Admission No can now be edited from every dashboard that can
+            // edit a student (Admin, Principal, Class Teacher) — only the
+            // read-only Parent dashboard never gets an edit form at all.
+            // Guard against accidentally blanking it out: keep the existing
+            // value if the field was cleared.
+            payload.admissionNo = admInput || student.admissionNo;
             await db.collection("students").doc(student.id).update(payload);
-            await logAudit("edit_student", {id: student.id, name});
+            await logAudit("edit_student", {id: student.id, name, admissionNo: payload.admissionNo});
             toast("Student updated","success");
           } else {
-            payload.admissionNo = $("#sm-adm",body).value.trim() || genAdmissionNo(section);
+            payload.admissionNo = admInput || genAdmissionNo(section);
             payload.pin = genPin();
             payload.createdAt = nowStamp();
             const ref = await db.collection("students").add(payload);
@@ -4508,7 +4556,7 @@ async function renderReportCardRoute(content){
     publicId: `${student.admissionNo}_${student.pin}_${session.name}_${term}`.replace(/\s+/g,"")
   };
   content.innerHTML = `<div id="report-target">${renderReportCardHTML(data,false)}</div>`;
-  wireReportCardButtons(data);
+  wireReportCardButtons(data, false);
 }
 
 /* KPI-style tile grid used for Character Development / Practical Skills /
@@ -4608,11 +4656,20 @@ function renderReportCardHTML(d, publicView){
 }
 
 /* ---------------------------------------------------------------------
-   Export helpers — render the card to a canvas once, then either save it
-   as a JPG directly, or drop it into a PDF page whose size is computed
-   from the canvas itself (rather than a fixed A4 height). That guarantees
-   the export is always exactly ONE page, no matter how long the card is —
-   nothing ever spills onto a second PDF page.
+   Export helpers.
+
+   IMPORTANT: downloads never capture the live on-screen card directly.
+   On a phone the visible card is rendered at the phone's narrow width,
+   and the results table (which needs ~560px minimum) would get clipped
+   in the exported image/PDF. Instead we render a fresh, hidden copy of
+   the card at a fixed desktop-quality width (850px) off-screen, capture
+   THAT, then remove it — so JPG/PDF output is always full and complete,
+   identical whether triggered from a phone or a desktop.
+
+   The PDF itself is always a standard, fixed A4 page (210 x 297mm) —
+   the captured image is scaled down (never up) to fit fully inside one
+   A4 page with a margin, so it always looks like a normal printable
+   page and never spills onto a second page.
    --------------------------------------------------------------------- */
 async function captureCardCanvas(cardEl){
   return await html2canvas(cardEl, {scale:2, backgroundColor:"#ffffff", useCORS:true});
@@ -4623,24 +4680,53 @@ function downloadCanvasAsJpg(canvas, filename){
   link.href = canvas.toDataURL("image/jpeg", 0.95);
   link.click();
 }
-function addCanvasAsSinglePdfPage(pdf, canvas, isFirstPage){
-  const pageWidthMm = 200;
-  const pageHeightMm = canvas.height * pageWidthMm / canvas.width;
-  const margin = 5;
-  if(!isFirstPage) pdf.addPage([pageWidthMm + margin*2, pageHeightMm + margin*2], "portrait");
+/* Draws a captured canvas onto a real A4 page, scaled to fit fully
+   inside the printable area (contain-fit, centred horizontally,
+   anchored near the top) so it always reads as one normal A4 sheet. */
+function addCanvasToA4Page(pdf, canvas, isFirstPage){
+  const pageW = 210, pageH = 297, margin = 10;
+  const maxW = pageW - margin*2, maxH = pageH - margin*2;
+  let imgW = maxW;
+  let imgH = imgW * canvas.height / canvas.width;
+  if(imgH > maxH){
+    imgH = maxH;
+    imgW = imgH * canvas.width / canvas.height;
+  }
+  const x = (pageW - imgW) / 2;
+  const y = margin;
+  if(!isFirstPage) pdf.addPage("a4", "portrait");
   const imgData = canvas.toDataURL("image/jpeg", 0.95);
-  pdf.addImage(imgData, "JPEG", margin, margin, pageWidthMm, pageHeightMm);
-}
-async function downloadCardAsSinglePagePdf(cardEl, filename){
-  const canvas = await captureCardCanvas(cardEl);
-  const pageWidthMm = 200, margin = 5;
-  const pageHeightMm = canvas.height * pageWidthMm / canvas.width;
-  const pdf = new window.jspdf.jsPDF({unit:"mm", format:[pageWidthMm + margin*2, pageHeightMm + margin*2]});
-  addCanvasAsSinglePdfPage(pdf, canvas, true);
-  pdf.save(filename);
+  pdf.addImage(imgData, "JPEG", x, y, imgW, imgH);
 }
 
-function wireReportCardButtons(d){
+/* Renders the report card off-screen at a fixed 850px desktop width
+   (regardless of the visitor's actual device width), captures it to a
+   canvas, then cleans up. Used by every JPG/PDF download so exports are
+   always complete and consistently formatted. */
+async function captureReportCardOffscreen(d, publicView){
+  const holder = document.createElement("div");
+  holder.style.position = "fixed";
+  holder.style.left = "-9999px";
+  holder.style.top = "0";
+  holder.style.width = "850px";
+  holder.innerHTML = renderReportCardHTML(d, publicView);
+  document.body.appendChild(holder);
+  try{
+    $all(".no-print", holder).forEach(el=> el.remove());
+    const qrEl = holder.querySelector('#rc-qr-pub') || holder.querySelector('#rc-qr-priv');
+    if(qrEl && window.QRCode && d.publicId){
+      qrEl.innerHTML = "";
+      new QRCode(qrEl, {text: `${location.origin}${location.pathname}#/verify?id=${encodeURIComponent(d.publicId)}`, width:96, height:96, colorDark:"#2E1650"});
+      await new Promise(r=> setTimeout(r, 60)); // let the QR code paint before capture
+    }
+    const cardEl = holder.querySelector("#rc-card");
+    return await captureCardCanvas(cardEl);
+  } finally {
+    holder.remove();
+  }
+}
+
+function wireReportCardButtons(d, publicView){
   try{
     const el = document.getElementById('rc-qr-pub') || document.getElementById('rc-qr-priv');
     if(el && window.QRCode && d.publicId){
@@ -4655,7 +4741,7 @@ function wireReportCardButtons(d){
   if(jpgBtn) jpgBtn.onclick = async ()=>{
     jpgBtn.disabled = true; const orig = jpgBtn.textContent; jpgBtn.textContent = "Generating…";
     try{
-      const canvas = await captureCardCanvas($("#rc-card"));
+      const canvas = await captureReportCardOffscreen(d, !!publicView);
       downloadCanvasAsJpg(canvas, `${d.studentName||'Report'}-${d.term||''}.jpg`);
     }catch(e){ toast("Could not generate image: "+e.message, "error"); }
     jpgBtn.disabled = false; jpgBtn.textContent = orig;
@@ -4663,7 +4749,10 @@ function wireReportCardButtons(d){
   if(pdfBtn) pdfBtn.onclick = async ()=>{
     pdfBtn.disabled = true; const orig = pdfBtn.textContent; pdfBtn.textContent = "Generating…";
     try{
-      await downloadCardAsSinglePagePdf($("#rc-card"), `${d.studentName||'Report'}-${d.term||''}.pdf`);
+      const canvas = await captureReportCardOffscreen(d, !!publicView);
+      const pdf = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
+      addCanvasToA4Page(pdf, canvas, true);
+      pdf.save(`${d.studentName||'Report'}-${d.term||''}.pdf`);
     }catch(e){ toast("Could not generate PDF: "+e.message, "error"); }
     pdfBtn.disabled = false; pdfBtn.textContent = orig;
   };
@@ -4699,13 +4788,13 @@ async function renderDownloadResults(content){
     <div class="field" id="dr-student-field" style="display:none;">
       <label>Search Student (name or admission no)</label>
       <input id="dr-student-search" placeholder="Start typing…">
-      <div id="dr-student-results" class="small-note" style="margin-top:6px;"></div>
+      <div id="dr-student-results" class="dr-search-results small-note"></div>
       <input type="hidden" id="dr-student-id">
     </div>
-    <button class="btn btn-primary" id="dr-download">⬇️ Generate &amp; Download PDF</button>
+    <button class="btn btn-primary dr-btn" id="dr-download">⬇️ Generate &amp; Download PDF</button>
     <div id="dr-status" class="small-note" style="margin-top:10px;"></div>
   </div>
-  <div id="dr-print-area" style="position:fixed;left:-9999px;top:0;"></div>`;
+  <div id="dr-print-area" style="position:fixed;left:-9999px;top:0;width:850px;"></div>`;
 
   $("#dr-scope").addEventListener("change", ()=>{
     const scope = $("#dr-scope").value;
@@ -4764,25 +4853,18 @@ async function renderDownloadResults(content){
     }));
 
     try{
-      // Render + capture ONE card at a time, each to its own canvas, then
-      // add each canvas as its own PDF page sized exactly to that card —
-      // this guarantees no single report card is ever split across pages,
-      // even when different students have different amounts of content.
-      let pdf = null;
+      // Render + capture ONE card at a time (each to its own canvas at
+      // the fixed 850px desktop width, never the visitor's own screen
+      // width), then place each canvas onto its own standard A4 page —
+      // every student gets one normal, complete A4 sheet.
+      const pdf = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
       for(let i=0; i<cardData.length; i++){
         status.textContent = `Building PDF — card ${i+1} of ${cardData.length}…`;
         printArea.innerHTML = renderReportCardHTML(cardData[i], true);
         $all(".no-print", printArea).forEach(el=> el.remove());
         const cardEl = $("#rc-card", printArea);
         const canvas = await captureCardCanvas(cardEl);
-        if(!pdf){
-          const pageWidthMm = 200, margin = 5;
-          const pageHeightMm = canvas.height * pageWidthMm / canvas.width;
-          pdf = new window.jspdf.jsPDF({unit:"mm", format:[pageWidthMm + margin*2, pageHeightMm + margin*2]});
-          addCanvasAsSinglePdfPage(pdf, canvas, true);
-        } else {
-          addCanvasAsSinglePdfPage(pdf, canvas, false);
-        }
+        addCanvasToA4Page(pdf, canvas, i===0);
       }
       printArea.innerHTML = "";
       pdf.save(`Results-${scope}-${term}.pdf`);
