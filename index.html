@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Purity Kids Academy — Result Portal</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%235B2A86%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22Georgia%22>P</text></svg>">
+<link rel="icon" href="img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -104,10 +104,14 @@ img{max-width:100%;display:block;}
 .pub-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
 .pub-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;color:var(--purple-800);font-size:17px;}
-.brand .logo-badge{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--purple-600),var(--purple-900));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:17px;}
+.brand .logo-badge{width:42px;height:42px;border-radius:0;background:none;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:17px;flex-shrink:0;}
+.brand .logo-badge img{width:100%;height:100%;object-fit:contain;display:block;image-rendering:auto;}
+.landing-logo{display:flex;justify-content:center;align-items:center;margin:0 auto 28px;}
+.landing-logo img{width:220px;height:220px;max-width:70vw;object-fit:contain;display:block;}
 .pub-links{display:flex;gap:26px;align-items:center;}
-.pub-links a{font-size:14.5px;font-weight:600;color:var(--ink-soft);}
-.pub-links a:hover{color:var(--purple-700);}
+.pub-links a:not(.btn){font-size:14.5px;font-weight:600;color:var(--ink-soft);}
+.pub-links a.btn{font-size:14.5px;}
+.pub-links a:not(.btn):hover{color:var(--purple-700);}
 .menu-toggle{display:none;background:none;border:none;font-size:22px;color:var(--purple-800);}
 
 /* ---------- Hero ---------- */
@@ -180,7 +184,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple-5
 .app-shell{display:flex;min-height:100vh;}
 .sidebar{width:250px;background:var(--purple-900);color:#fff;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;transition:transform .2s;}
 .sidebar .brand{padding:22px 20px 18px;color:#fff;font-size:15.5px;}
-.sidebar .brand .logo-badge{background:linear-gradient(145deg,#fff,var(--purple-100));color:var(--purple-800);}
+.sidebar .brand .logo-badge{background:none;color:var(--purple-800);}
 .side-role{padding:0 20px 14px;font-size:12px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.06em;}
 .side-links{flex:1;padding:6px 12px;}
 .side-link{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.78);font-size:14px;font-weight:500;margin-bottom:3px;}
@@ -254,7 +258,8 @@ tr:last-child td{border-bottom:none;}
 .report-wrap{max-width:820px;margin:24px auto;background:#fff;}
 .report-card{border:3px solid var(--purple-700);border-radius:10px;padding:30px;}
 .rc-head{display:flex;align-items:center;gap:16px;border-bottom:2px solid var(--purple-700);padding-bottom:16px;margin-bottom:16px;}
-.rc-logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(145deg,var(--purple-500),var(--purple-900));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:26px;box-shadow:0 4px 10px rgba(91,42,134,.35);}
+.rc-logo{width:70px;height:70px;border-radius:0;background:none;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:26px;overflow:visible;flex-shrink:0;}
+.rc-logo img{width:100%;height:100%;object-fit:contain;display:block;}
 .rc-head h2{font-size:20px;color:var(--purple-800);}
 .rc-head p{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
 .rc-title{text-align:center;font-weight:700;color:#fff;letter-spacing:.05em;text-transform:uppercase;margin:14px 0;font-size:13px;background:linear-gradient(90deg,var(--purple-600),var(--purple-800));padding:7px 14px;border-radius:999px;display:inline-block;}
@@ -282,7 +287,13 @@ tr:last-child td{border-bottom:none;}
 .rc-remark-box.rc-remark-guidance b{color:#1B5AA8;}
 .rc-remark-box.rc-remark-meta b{color:var(--warn);}
 .rc-sign-row{display:flex;justify-content:space-between;margin-top:30px;font-size:12px;}
-.rc-sign-row div{text-align:center;width:150px;border-top:1px solid var(--ink);padding-top:6px;}
+.rc-sign-box{width:170px;text-align:center;}
+.rc-sign-img{max-height:52px;max-width:170px;object-fit:contain;display:block;margin:0 auto 4px;}
+.rc-sign-line{border-top:1px solid var(--ink);padding-top:6px;}
+.sig-upload-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;}
+.sig-preview{width:150px;height:60px;border:1.5px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;flex-shrink:0;}
+.sig-preview img{max-width:100%;max-height:100%;object-fit:contain;}
+.sig-preview .sig-empty{font-size:11px;color:var(--ink-soft);text-align:center;padding:0 6px;}
 .rc-qr{display:flex;justify-content:center;margin-top:16px;}
 .rc-section-title{font-weight:700;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px;background:var(--purple-600);width:fit-content;max-width:100%;padding:4px 12px;border-radius:999px;align-self:flex-start;}
 .rc-skill-section{display:flex;flex-direction:column;min-width:0;}
@@ -343,6 +354,7 @@ tr:last-child td{border-bottom:none;}
   .topbar{padding:12px 16px;}
 }
 @media (max-width:480px){
+  .landing-logo img{width:170px;height:170px;}
   .stat-grid{grid-template-columns:1fr 1fr;}
   .grid-4{grid-template-columns:1fr;}
   .auth-card{padding:32px 20px;}
@@ -844,16 +856,13 @@ const SCHOOL = {
   motto: "PURIFYING KIDS FOR FUTURE",
   address: "Along Imafon Community Market, Besides Geofas Table Water, Imafon, Akure, Ondo State.",
   phones: ["09064798049", "08063252646"],
-  anthem: `Purity Kids Academy, our pride and joy,
-Molding every girl and every boy.
-With knowledge and virtue we shall rise,
-Purifying kids, oh so wise.
-
-Chorus:
-Onward Purity, our banner high,
-Under Ondo's bright and open sky.
-Purifying kids for future we stand,
-Together in learning, hand in hand.`,
+  anthem: `We are children of Purity Kids Academy
+Peculiar people we are, building the future ahead of us
+We will make our nation proud, Purity Kids Academy,
+Purity Kids Academy
+The pride of the nation we are
+Purity Kids Academy, future stars,
+Purity Kids Academy, future stars.`,
   nationalAnthem: `Nigeria, we hail thee,
 Our own dear native land,
 Though tribe and tongue may differ,
@@ -874,11 +883,10 @@ Help us to build a nation
 Where no man is oppressed,
 And so with peace and plenty
 Nigeria may be blessed.`,
-  pledge: `I pledge to Nigeria my country,
-To be faithful, loyal and honest,
-To serve Nigeria with all my strength,
-To defend her unity,
-And uphold her honour and glory,
+  pledge: `I will make Purity Kids Academy
+A pride in the society
+Building the future ahead of us.
+We will make our nation proud,
 So help me God.`
 };
 
@@ -931,6 +939,71 @@ function fmtDate(ts){
   return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 }
 function nowStamp(){ return firebase.firestore.FieldValue.serverTimestamp(); }
+
+/* ---------------------------------------------------------------------
+   Signature image upload helper — reads a chosen file, downsizes it on
+   a canvas (signatures never need to be huge) and returns a small PNG
+   data URL. Stored directly as a string field in Firestore (no Storage
+   bucket needed) — comfortably under Firestore's 1MB field limit.
+   --------------------------------------------------------------------- */
+function fileToResizedDataUrl(file, maxW, maxH){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(null); return; }
+    if(!file.type || !file.type.startsWith("image/")){ reject(new Error("Please choose an image file.")); return; }
+    const reader = new FileReader();
+    reader.onerror = ()=> reject(new Error("Could not read that file."));
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onerror = ()=> reject(new Error("Could not read that image."));
+      img.onload = ()=>{
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const ratio = Math.min(maxW / w, maxH / h, 1);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+/* Wires a file input + live preview box; returns a getter for the
+   current signature data URL (null if never changed, "" if removed). */
+function wireSignatureUpload(inputId, previewId, removeId, existingUrl){
+  let current = existingUrl || null;
+  let changed = false;
+  const input = $(`#${inputId}`);
+  const preview = $(`#${previewId}`);
+  const removeBtn = removeId ? $(`#${removeId}`) : null;
+  function renderPreview(){
+    preview.innerHTML = current ? `<img src="${current}" alt="Signature preview">` : `<span class="sig-empty">No signature uploaded</span>`;
+  }
+  renderPreview();
+  if(input){
+    input.addEventListener("change", async ()=>{
+      const file = input.files && input.files[0];
+      if(!file) return;
+      try{
+        current = await fileToResizedDataUrl(file, 320, 130);
+        changed = true;
+        renderPreview();
+      }catch(e){ toast(e.message, "error"); }
+    });
+  }
+  if(removeBtn){
+    removeBtn.addEventListener("click", ()=>{
+      current = "";
+      changed = true;
+      if(input) input.value = "";
+      renderPreview();
+    });
+  }
+  return ()=> changed ? current : undefined; // undefined = leave unchanged in Firestore
+}
 
 async function logAudit(action, details){
   try{
@@ -1050,7 +1123,7 @@ function publicHeader(active){
   return `
   <header class="pub-header">
     <div class="container pub-nav">
-      <a href="#/" class="brand"><span class="logo-badge">P</span> PURITY KIDS ACADEMY</a>
+      <a href="#/" class="brand"><span class="logo-badge"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></span> PURITY KIDS ACADEMY</a>
       <button class="menu-toggle" id="menu-toggle">☰</button>
       <nav class="pub-links" id="pub-links">
         <a href="#/">Home</a>
@@ -1069,7 +1142,7 @@ function publicFooter(){
     <div class="container">
       <div class="footer-grid">
         <div>
-          <div class="brand" style="color:#fff;margin-bottom:12px;"><span class="logo-badge">P</span>PURITY KIDS ACADEMY</div>
+          <div class="brand" style="color:#fff;margin-bottom:12px;"><span class="logo-badge"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></span>PURITY KIDS ACADEMY</div>
           <p style="font-size:13.5px;max-width:320px;">${esc(SCHOOL.motto)}</p>
           <p style="font-size:13px;margin-top:14px;">${esc(SCHOOL.address)}</p>
           <p style="font-size:13px;">${SCHOOL.phones.join(" · ")}</p>
@@ -1098,6 +1171,7 @@ function renderLanding(app){
   ${publicHeader()}
   <section class="hero">
     <div class="container hero-inner">
+      <div class="landing-logo"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></div>
       <span class="eyebrow">Result Management Portal</span>
       <h1>PURITY KIDS ACADEMY</h1>
       <div class="motto">"${esc(SCHOOL.motto)}"</div>
@@ -1133,8 +1207,8 @@ function renderLanding(app){
         <div class="anthem-box">${esc(SCHOOL.anthem)}</div>
       </div>
       <div class="card">
-        <span class="tag">National Pledge</span>
-        <h2 style="font-size:18px;margin:8px 0 12px;">I Pledge to Nigeria</h2>
+        <span class="tag">School Pledge</span>
+        <h2 style="font-size:18px;margin:8px 0 12px;">Our School Pledge</h2>
         <div class="anthem-box">${esc(SCHOOL.pledge)}</div>
       </div>
     </div>
@@ -1305,7 +1379,7 @@ function renderLogin(app){
   app.innerHTML = `
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="brand"><span class="logo-badge">P</span></div>
+      <div class="brand"><span class="logo-badge"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></span></div>
       <h2>Portal Login</h2>
       <p class="sub">Purity Kids Academy — Staff, Parent &amp; Student sign in</p>
       <div id="login-msg"></div>
@@ -1411,7 +1485,7 @@ async function renderApp(app, hash){
   app.innerHTML = `
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <a href="#/dashboard" class="brand"><span class="logo-badge">P</span> Purity Kids Academy</a>
+      <a href="#/dashboard" class="brand"><span class="logo-badge"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></span> Purity Kids Academy</a>
       <div class="side-role">${esc(role)} portal</div>
       <nav class="side-links">
         ${navItems.map(n => `<a class="side-link ${hash.startsWith(n.hash)?'active':''}" href="${n.hash}">${n.icon} <span>${n.label}</span></a>`).join("")}
@@ -1521,6 +1595,22 @@ async function getGradingScale(){
 async function getCurrentSession(){
   const arr = await fetchAll("sessions");
   return arr.find(s=>s.isCurrent) || arr[0] || null;
+}
+/* Finds the Class Teacher assigned to a given class, if any, so their
+   uploaded signature can be shown on that class's report cards. */
+async function getClassTeacherForClass(classId){
+  if(!classId) return null;
+  try{
+    const snap = await db.collection("users").where("classTeacherOf","==",classId).limit(1).get();
+    if(snap.empty) return null;
+    return {id: snap.docs[0].id, ...snap.docs[0].data()};
+  }catch(e){ return null; }
+}
+async function getPrincipalSignature(){
+  try{
+    const snap = await db.collection("schoolSettings").doc("main").get();
+    return snap.exists ? (snap.data().signatureDataUrl || "") : "";
+  }catch(e){ return ""; }
 }
 
 /* =========================================================================
@@ -1668,14 +1758,25 @@ async function renderSettings(content){
         <div class="field"><label>Principal / Headmaster Name</label><input id="st-principal" value="${esc(s.principalName||'')}"></div>
         <div class="field"><label>Primary Colour</label><input type="color" id="st-color" value="${esc(s.brandColor||'#5B2A86')}"></div>
       </div>
+      <div class="field">
+        <label>Principal's Signature (shown on every report card)</label>
+        <div class="sig-upload-wrap">
+          <div class="sig-preview" id="st-sig-preview"></div>
+          <div>
+            <input type="file" accept="image/*" id="st-sig-file">
+            <button type="button" class="btn btn-outline btn-sm" id="st-sig-remove" style="margin-top:8px;">Remove Signature</button>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-primary" type="submit" id="st-save">Save Settings</button>
     </form>
   </div>`;
+  const getSignature = wireSignatureUpload("st-sig-file", "st-sig-preview", "st-sig-remove", s.signatureDataUrl||null);
   $("#settings-form").addEventListener("submit", async e=>{
     e.preventDefault();
     const btn = $("#st-save"); btn.disabled = true; btn.textContent = "Saving…";
     try{
-      await db.collection("schoolSettings").doc("main").set({
+      const payload = {
         name: $("#st-name").value.trim(),
         motto: $("#st-motto").value.trim(),
         address: $("#st-address").value.trim(),
@@ -1684,7 +1785,10 @@ async function renderSettings(content){
         principalName: $("#st-principal").value.trim(),
         brandColor: $("#st-color").value,
         updatedAt: nowStamp()
-      }, {merge:true});
+      };
+      const sig = getSignature();
+      if(sig !== undefined) payload.signatureDataUrl = sig;
+      await db.collection("schoolSettings").doc("main").set(payload, {merge:true});
       await logAudit("update_settings", {});
       toast("School settings saved", "success");
     }catch(err){ toast(err.message, "error"); }
@@ -2438,9 +2542,21 @@ async function renderStaff(content){
         <select id="at-classteacher-select">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${u.classTeacherOf===c.id?'selected':''}>${esc(c.name)}</option>`).join("")}</select>
       </div>
       <p class="small-note">Class Teacher = full access to every subject's results, attendance, and character/practical-skill reports for that one class only. Subject Teacher = can only enter/edit results for the subject(s) + class(es) listed above.</p>
+
+      <div class="rc-section-title">Class Teacher's Signature (optional):</div>
+      <p class="small-note" style="margin-bottom:6px;">Only needed if this teacher can't upload their own from "My Class (Full Access)".</p>
+      <div class="sig-upload-wrap">
+        <div class="sig-preview" id="at-sig-preview"></div>
+        <div>
+          <input type="file" accept="image/*" id="at-sig-file">
+          <button type="button" class="btn btn-outline btn-sm" id="at-sig-remove" style="margin-top:8px;">Remove Signature</button>
+        </div>
+      </div>
+
       <div class="modal-actions"><button class="btn btn-outline" id="at-cancel">Cancel</button><button class="btn btn-primary" id="at-save">Save Assignments</button></div>`,
       body=>{
         let assignments = [...(u.assignments||[])];
+        const getTeacherSignature = wireSignatureUpload("at-sig-file", "at-sig-preview", "at-sig-remove", u.signatureDataUrl||null);
         function redraw(){ $("#at-list",body).innerHTML = assignments.map((a,i)=>`<div style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">${esc(a.subjectName)} — ${esc(a.className)} <button type="button" data-rm="${i}" class="btn icon-btn">✕</button></div>`).join("");
           $all("[data-rm]",body).forEach(x=> x.onclick = ()=>{ assignments.splice(parseInt(x.dataset.rm),1); redraw(); }); }
         redraw();
@@ -2456,6 +2572,8 @@ async function renderStaff(content){
           const payload = {assignments};
           payload.classTeacherOf = ctChecked ? ctSel.value : firebase.firestore.FieldValue.delete();
           payload.classTeacherOfName = ctChecked ? ctSel.selectedOptions[0].dataset.name : firebase.firestore.FieldValue.delete();
+          const sig = getTeacherSignature();
+          if(sig !== undefined) payload.signatureDataUrl = sig;
           await db.collection("users").doc(u.id).update(payload);
           closeModal(); toast("Assignments saved","success"); renderApp($("#app"), location.hash);
         };
@@ -4057,6 +4175,21 @@ async function renderClassOverview(content){
   </div>
 
   <div class="panel">
+    <div class="panel-head"><h3>My Signature</h3></div>
+    <p class="small-note" style="margin-bottom:8px;">Upload your signature once — it will automatically appear on every report card for ${esc(className)}, in the "Class Teacher's Signature" box.</p>
+    <div class="sig-upload-wrap">
+      <div class="sig-preview" id="co-sig-preview"></div>
+      <div>
+        <input type="file" accept="image/*" id="co-sig-file">
+        <div style="margin-top:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="co-sig-remove">Remove Signature</button>
+          <button type="button" class="btn btn-primary btn-sm" id="co-sig-save">Save Signature</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
     <div class="panel-head">
       <h3>Class Students (${classStudents.length})</h3>
       <button class="btn btn-primary btn-sm" id="co-add-student">+ Register Student</button>
@@ -4078,6 +4211,17 @@ async function renderClassOverview(content){
       </tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No students in this class yet — use "Register Student" above to add the first one.</td></tr>`}
     </tbody></table></div>
   </div>`;
+
+  const getMySignature = wireSignatureUpload("co-sig-file", "co-sig-preview", "co-sig-remove", state.profile.signatureDataUrl||null);
+  $("#co-sig-save").onclick = async ()=>{
+    const sig = getMySignature();
+    if(sig === undefined){ toast("Choose or remove a signature first.","error"); return; }
+    try{
+      await db.collection("users").doc(state.user.uid).update({signatureDataUrl: sig});
+      state.profile.signatureDataUrl = sig || null;
+      toast("Signature saved","success");
+    }catch(e){ toast(e.message, "error"); }
+  };
 
   $("#co-term").addEventListener("change", e=>{ state.currentTerm = e.target.value; renderClassOverview($("#content")); });
 
@@ -4528,7 +4672,11 @@ function openTermRecordModal(studentId, sessionId, term, existing, onSaved){
 async function publishStudentResult(studentId, session, term, group, position, tr){
   const studentDoc = await db.collection("students").doc(studentId).get();
   const student = studentDoc.data();
-  const totalInClassSnap = await db.collection("students").where("classId","==",student.classId).get();
+  const [totalInClassSnap, classTeacher, principalSignature] = await Promise.all([
+    db.collection("students").where("classId","==",student.classId).get(),
+    getClassTeacherForClass(student.classId),
+    getPrincipalSignature()
+  ]);
   const totalInClass = totalInClassSnap.docs.filter(d=> (d.data().status||'active')!=='archived').length;
 
   const batch = db.batch();
@@ -4547,6 +4695,8 @@ async function publishStudentResult(studentId, session, term, group, position, t
     characterDevelopment: tr.characterDevelopment || {}, practicalSkills: tr.practicalSkills || {}, psychomotorSkills: tr.psychomotorSkills || {},
     award: tr.award || "", vacationDate: tr.vacationDate || "", resumptionDate: tr.resumptionDate || "",
     promotion: tr.promotion || "",
+    teacherSignature: classTeacher ? (classTeacher.signatureDataUrl || "") : "",
+    principalSignature: principalSignature || "",
     publishedAt: nowStamp(), publicId
   });
   await logAudit("publish_result", {studentId, term, publicId});
@@ -4563,10 +4713,12 @@ async function renderReportCardRoute(content){
   const student = studentDoc.data();
   const session = await getCurrentSession();
   const term = state.currentTerm;
-  const [resultsSnap, trDoc, totalInClassSnap] = await Promise.all([
+  const [resultsSnap, trDoc, totalInClassSnap, classTeacher, principalSignature] = await Promise.all([
     db.collection("results").where("studentId","==",studentId).where("sessionId","==",session.id).where("term","==",term).get(),
     db.collection("termRemarks").doc(`${studentId}_${session.id}_${term}`).get(),
-    db.collection("students").where("classId","==",student.classId).get()
+    db.collection("students").where("classId","==",student.classId).get(),
+    getClassTeacherForClass(student.classId),
+    getPrincipalSignature()
   ]);
   const subjects = resultsSnap.docs.map(d=>d.data());
   const tr = trDoc.exists ? trDoc.data() : {};
@@ -4583,6 +4735,8 @@ async function renderReportCardRoute(content){
     characterDevelopment: tr.characterDevelopment || {}, practicalSkills: tr.practicalSkills || {}, psychomotorSkills: tr.psychomotorSkills || {},
     award: tr.award || "", vacationDate: tr.vacationDate || "", resumptionDate: tr.resumptionDate || "",
     promotion: tr.promotion || "",
+    teacherSignature: classTeacher ? (classTeacher.signatureDataUrl || "") : "",
+    principalSignature: principalSignature || "",
     publicId: `${student.admissionNo}_${student.pin}_${session.name}_${term}`.replace(/\s+/g,"")
   };
   content.innerHTML = `<div id="report-target">${renderReportCardHTML(data,false)}</div>`;
@@ -4627,7 +4781,7 @@ function renderReportCardHTML(d, publicView){
     <div class="report-card" id="rc-card">
       <div class="rc-topband"></div>
       <div class="rc-head">
-        <div class="rc-logo">P</div>
+        <div class="rc-logo"><img src="img/logo.png" alt="Purity Kids Academy logo" onerror="this.onerror=null;this.replaceWith(document.createTextNode(String.fromCharCode(80)));"></div>
         <div>
           <h2>${esc(SCHOOL.name)}</h2>
           <p>${esc(SCHOOL.address)}</p>
@@ -4677,8 +4831,14 @@ function renderReportCardHTML(d, publicView){
       ${isThirdTerm ? `<div class="rc-promo-box">${d.promotion ? `🎓 Promoted To: ${esc(d.promotion)}` : "Third Term — Promotion status not yet entered"}</div>` : ``}
 
       <div class="rc-sign-row">
-        <div>Class Teacher's Signature</div>
-        <div>Principal's Signature</div>
+        <div class="rc-sign-box">
+          ${d.teacherSignature ? `<img class="rc-sign-img" src="${d.teacherSignature}" alt="Class Teacher's Signature">` : ``}
+          <div class="rc-sign-line">Class Teacher's Signature</div>
+        </div>
+        <div class="rc-sign-box">
+          ${d.principalSignature ? `<img class="rc-sign-img" src="${d.principalSignature}" alt="Principal's Signature">` : ``}
+          <div class="rc-sign-line">Principal's Signature</div>
+        </div>
       </div>
       <div class="rc-qr" id="rc-qr-${publicView?'pub':'priv'}"></div>
     </div>
@@ -4879,7 +5039,8 @@ async function renderDownloadResults(content){
       teacherRemark:d.teacherRemark, principalRemark:d.principalRemark, guidanceRemark:d.guidanceRemark,
       attendancePresent:d.attendancePresent, attendanceTotal:d.attendanceTotal,
       characterDevelopment:d.characterDevelopment||{}, practicalSkills:d.practicalSkills||{}, psychomotorSkills:d.psychomotorSkills||{},
-      award:d.award, vacationDate:d.vacationDate, resumptionDate:d.resumptionDate, promotion:d.promotion, publicId:d.publicId
+      award:d.award, vacationDate:d.vacationDate, resumptionDate:d.resumptionDate, promotion:d.promotion,
+      teacherSignature:d.teacherSignature||"", principalSignature:d.principalSignature||"", publicId:d.publicId
     }));
 
     try{
