@@ -1830,6 +1830,9 @@ function renderLogin(app){
         <div class="field"><label>Password</label><input required type="password" id="li-pass" placeholder="••••••••"></div>
         <button class="btn btn-primary btn-block" type="submit" id="li-btn">Login</button>
       </form>
+      <p style="text-align:center;font-size:13px;margin-top:14px;">
+        <a href="#" id="forgot-pass-link" style="color:var(--purple-700);font-weight:600;">Forgot your password?</a>
+      </p>
       <p style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px;">
         <a href="#/check-result">Check a result instead →</a>
       </p>
@@ -1847,6 +1850,37 @@ function renderLogin(app){
       msg.innerHTML = `<div class="err-msg">${esc(friendlyAuthError(err))}</div>`;
     }
     btn.disabled = false; btn.textContent = "Login";
+  });
+
+  $("#forgot-pass-link").addEventListener("click", e=>{
+    e.preventDefault();
+    const prefill = $("#li-email").value.trim();
+    openModal("Reset Your Password", `
+      <p style="color:var(--ink-soft);font-size:14.5px;margin-bottom:14px;">Enter the email address on your account. We'll send you a link to reset your password.</p>
+      <div id="fp-msg"></div>
+      <div class="field"><label>Email Address</label><input type="email" id="fp-email" value="${esc(prefill)}" placeholder="you@puritykidsacademy.com"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="fp-cancel">Cancel</button>
+        <button class="btn btn-primary" id="fp-send">Send Reset Link</button>
+      </div>`,
+      body=>{
+        $("#fp-cancel", body).onclick = closeModal;
+        $("#fp-send", body).onclick = async ()=>{
+          const email = $("#fp-email", body).value.trim();
+          const msg = $("#fp-msg", body);
+          const sendBtn = $("#fp-send", body);
+          if(!email){ msg.innerHTML = `<div class="err-msg">Please enter your email address.</div>`; return; }
+          sendBtn.disabled = true; sendBtn.textContent = "Sending…";
+          try{
+            await auth.sendPasswordResetEmail(email);
+            msg.innerHTML = `<div class="ok-msg">A password reset link has been sent to ${esc(email)}. Please check your inbox (and spam folder).</div>`;
+            sendBtn.textContent = "Link Sent";
+          }catch(err){
+            msg.innerHTML = `<div class="err-msg">${esc(friendlyAuthError(err))}</div>`;
+            sendBtn.disabled = false; sendBtn.textContent = "Send Reset Link";
+          }
+        };
+      });
   });
 }
 function friendlyAuthError(err){
@@ -1884,6 +1918,7 @@ const NAV_BY_ROLE = {
     {hash:"#/dashboard", label:"Dashboard", icon:"🏠"},
     {hash:"#/approve-results", label:"Approve &amp; Publish", icon:"✅"},
     {hash:"#/students", label:"Students", icon:"🎓"},
+    {hash:"#/staff", label:"Staff &amp; Users", icon:"👥"},
     {hash:"#/results-overview", label:"Results Overview", icon:"📝"},
     {hash:"#/pins", label:"Result PINs", icon:"🔑"},
     {hash:"#/download-results", label:"Download Results", icon:"⬇️"},
@@ -1909,6 +1944,10 @@ const AUDIT_LOG_ROLES = ["admin"];
 
 /* Roles allowed to bulk-download results (all / by class / individual) */
 const DOWNLOAD_RESULTS_ROLES = ["admin", "principal"];
+
+/* Roles allowed to view/manage Staff & Users, including deleting staff
+   accounts that are no longer with the school. */
+const STAFF_MANAGE_ROLES = ["admin", "principal"];
 
 async function renderApp(app, hash){
   const role = state.profile.role;
@@ -1970,6 +2009,12 @@ async function renderApp(app, hash){
   if(route.startsWith("#/download-results") && !DOWNLOAD_RESULTS_ROLES.includes(role)){
     $("#page-title").textContent = "Access Restricted";
     $("#content").innerHTML = `<div class="empty-state"><div class="big">🔒</div>Bulk result downloads are restricted to Admin and Principal.</div>`;
+    return;
+  }
+
+  if(route.startsWith("#/staff") && !STAFF_MANAGE_ROLES.includes(role)){
+    $("#page-title").textContent = "Access Restricted";
+    $("#content").innerHTML = `<div class="empty-state"><div class="big">🔒</div>Staff &amp; Users is restricted to Admin and Principal.</div>`;
     return;
   }
 
@@ -2906,17 +2951,24 @@ async function renderMyStudents(content){
 }
 
 /* =========================================================================
-   16. STAFF / USERS  (admin creates teacher / principal / parent accounts)
+   16. STAFF / USERS  (admin & principal manage teacher / principal /
+   parent accounts, including deleting staff no longer with the school)
    ========================================================================= */
 async function renderStaff(content){
+  const role = state.profile.role;
+  const canCreateOrAssign = role === "admin"; // account creation & assignment stays admin-only
+  const canDelete = STAFF_MANAGE_ROLES.includes(role); // admin + principal can remove staff
+
   const [users, classes, subjects] = await Promise.all([fetchAll("users"), fetchAll("classes","name"), fetchAll("subjects","name")]);
   content.innerHTML = `
   <div class="panel">
-    <div class="panel-head"><h3>Staff &amp; User Accounts</h3><button class="btn btn-primary btn-sm" id="add-staff">+ Add User</button></div>
+    <div class="panel-head"><h3>Staff &amp; User Accounts</h3>${canCreateOrAssign ? `<button class="btn btn-primary btn-sm" id="add-staff">+ Add User</button>` : ``}</div>
+    ${!canCreateOrAssign ? `<p class="small-note" style="margin-bottom:14px;">As Principal you can remove staff who are no longer with the school. Creating new accounts and assigning subjects/classes remains Admin-only.</p>` : ``}
     <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Subjects</th><th>Classes</th><th>Class Teacher Of</th><th>Actions</th></tr></thead><tbody>
     ${users.length ? users.map(u=>{
       const subjectNames = [...new Set((u.assignments||[]).map(a=>a.subjectName))];
       const classNames = [...new Set((u.assignments||[]).map(a=>a.className))];
+      const isSelf = u.id === state.user.uid;
       return `
       <tr>
         <td><b>${esc(u.name)}</b></td><td>${esc(u.email)}</td>
@@ -2924,103 +2976,127 @@ async function renderStaff(content){
         <td style="font-size:12.5px;color:var(--ink-soft);">${subjectNames.length ? subjectNames.map(esc).join(", ") : "—"}</td>
         <td style="font-size:12.5px;color:var(--ink-soft);">${classNames.length ? classNames.map(esc).join(", ") : "—"}</td>
         <td style="font-size:12.5px;color:var(--ink-soft);">${u.classTeacherOf? `<b>${esc(u.classTeacherOfName||'')}</b>` : "—"}</td>
-        <td>${u.role==='teacher' ? `<button class="btn btn-outline btn-sm" data-assign-teacher="${u.id}">Assign</button>` : ""}</td>
+        <td>
+          ${canCreateOrAssign && u.role==='teacher' ? `<button class="btn btn-outline btn-sm" data-assign-teacher="${u.id}">Assign</button>` : ""}
+          ${canDelete && !isSelf ? `<button class="btn btn-danger btn-sm" data-del-staff="${u.id}" data-staff-name="${esc(u.name)}" title="Remove this staff member">🗑️ Delete</button>` : ""}
+          ${isSelf ? `<span class="small-note">(you)</span>` : ""}
+        </td>
       </tr>`;
     }).join("") : `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">No staff accounts yet.</td></tr>`}
     </tbody></table></div>
   </div>`;
 
-  $("#add-staff").onclick = ()=> openModal("Add User Account", `
-    <div id="add-staff-msg"></div>
-    <div class="field"><label>Full Name</label><input id="as-name"></div>
-    <div class="field"><label>Email</label><input id="as-email" type="email"></div>
-    <div class="field"><label>Temporary Password (min 6 characters)</label><input id="as-pass" type="text" placeholder="e.g. Purity@2026"></div>
-    <div class="field"><label>Role</label>
-      <select id="as-role">
-        <option value="teacher">Teacher / Subject Teacher</option>
-        <option value="principal">Principal / Headmaster</option>
-        <option value="admin">School Admin</option>
-        <option value="parent">Parent</option>
-      </select>
-    </div>
-    <div class="modal-actions"><button class="btn btn-outline" id="as-cancel">Cancel</button><button class="btn btn-primary" id="as-save">Create Account</button></div>`,
-    body=>{
-      $("#as-cancel",body).onclick = closeModal;
-      $("#as-save",body).onclick = async ()=>{
-        const name = $("#as-name",body).value.trim(), email = $("#as-email",body).value.trim(), pass = $("#as-pass",body).value;
-        const role = $("#as-role",body).value;
-        const msg = $("#add-staff-msg", body);
-        if(!name || !email || pass.length < 6){ msg.innerHTML = `<div class="err-msg">Fill all fields — password needs 6+ characters.</div>`; return; }
-        try{
-          const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
-          await db.collection("users").doc(cred.user.uid).set({
-            name, email, role, assignments: [], createdAt: nowStamp()
-          });
-          await secondaryAuth.signOut();
-          await logAudit("create_staff", {email, role});
-          closeModal(); toast(`${role} account created for ${name}`, "success");
-          renderApp($("#app"), location.hash);
-        }catch(err){ msg.innerHTML = `<div class="err-msg">${esc(err.message)}</div>`; }
-      };
-    });
-
-  $all("[data-assign-teacher]").forEach(b=> b.onclick = ()=>{
-    const u = users.find(x=>x.id===b.dataset.assignTeacher);
-    openModal(`Assign ${u.name}`, `
-      <p class="small-note" style="margin-bottom:10px;">A teacher can hold <b>both</b> roles at once: they can be the <b>Class Teacher</b> of one class (full access to that class's students, attendance and character reports) <i>and</i> a <b>Subject Teacher</b> for one or more subject + class combinations (can only record results for their own assigned subjects).</p>
-
-      <div class="rc-section-title" style="margin-top:0;">Subject Teacher Assignment(s):</div>
-      <div class="field-row">
-        <div class="field"><label>Subject</label><select id="at-subject">${subjects.map(s=>`<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join("")}</select></div>
-        <div class="field"><label>Class</label><select id="at-class">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}">${esc(c.name)}</option>`).join("")}</select></div>
+  if(canCreateOrAssign){
+    $("#add-staff").onclick = ()=> openModal("Add User Account", `
+      <div id="add-staff-msg"></div>
+      <div class="field"><label>Full Name</label><input id="as-name"></div>
+      <div class="field"><label>Email</label><input id="as-email" type="email"></div>
+      <div class="field"><label>Temporary Password (min 6 characters)</label><input id="as-pass" type="text" placeholder="e.g. Purity@2026"></div>
+      <div class="field"><label>Role</label>
+        <select id="as-role">
+          <option value="teacher">Teacher / Subject Teacher</option>
+          <option value="principal">Principal / Headmaster</option>
+          <option value="admin">School Admin</option>
+          <option value="parent">Parent</option>
+        </select>
       </div>
-      <button class="btn btn-outline btn-sm" id="at-add" type="button">+ Add to list</button>
-      <div style="margin-top:12px;" id="at-list">
-        ${(u.assignments||[]).map((a,i)=>`<div data-idx="${i}" style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);">${esc(a.subjectName)} — ${esc(a.className)}</div>`).join("")}
-      </div>
-
-      <div class="rc-section-title">Class Teacher Assignment:</div>
-      <div class="field"><label><input type="checkbox" style="width:auto;" id="at-classteacher" ${u.classTeacherOf?'checked':''}> Make this person the Class Teacher of:</label>
-        <select id="at-classteacher-select">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${u.classTeacherOf===c.id?'selected':''}>${esc(c.name)}</option>`).join("")}</select>
-      </div>
-      <p class="small-note">Class Teacher = full access to every subject's results, attendance, and character/practical-skill reports for that one class only. Subject Teacher = can only enter/edit results for the subject(s) + class(es) listed above.</p>
-
-      <div class="rc-section-title">Class Teacher's Signature (optional):</div>
-      <p class="small-note" style="margin-bottom:6px;">Only needed if this teacher can't upload their own from "My Class (Full Access)".</p>
-      <div class="sig-upload-wrap">
-        <div class="sig-preview" id="at-sig-preview"></div>
-        <div>
-          <input type="file" accept="image/*" id="at-sig-file">
-          <button type="button" class="btn btn-outline btn-sm" id="at-sig-remove" style="margin-top:8px;">Remove Signature</button>
-        </div>
-      </div>
-
-      <div class="modal-actions"><button class="btn btn-outline" id="at-cancel">Cancel</button><button class="btn btn-primary" id="at-save">Save Assignments</button></div>`,
+      <div class="modal-actions"><button class="btn btn-outline" id="as-cancel">Cancel</button><button class="btn btn-primary" id="as-save">Create Account</button></div>`,
       body=>{
-        let assignments = [...(u.assignments||[])];
-        const getTeacherSignature = wireSignatureUpload("at-sig-file", "at-sig-preview", "at-sig-remove", u.signatureDataUrl||null);
-        function redraw(){ $("#at-list",body).innerHTML = assignments.map((a,i)=>`<div style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">${esc(a.subjectName)} — ${esc(a.className)} <button type="button" data-rm="${i}" class="btn icon-btn">✕</button></div>`).join("");
-          $all("[data-rm]",body).forEach(x=> x.onclick = ()=>{ assignments.splice(parseInt(x.dataset.rm),1); redraw(); }); }
-        redraw();
-        $("#at-add",body).onclick = ()=>{
-          const subjSel = $("#at-subject",body), classSel = $("#at-class",body);
-          assignments.push({subjectId:subjSel.value, subjectName:subjSel.selectedOptions[0].dataset.name, classId:classSel.value, className:classSel.selectedOptions[0].dataset.name});
-          redraw();
-        };
-        $("#at-cancel",body).onclick = closeModal;
-        $("#at-save",body).onclick = async ()=>{
-          const ctChecked = $("#at-classteacher",body).checked;
-          const ctSel = $("#at-classteacher-select",body);
-          const payload = {assignments};
-          payload.classTeacherOf = ctChecked ? ctSel.value : firebase.firestore.FieldValue.delete();
-          payload.classTeacherOfName = ctChecked ? ctSel.selectedOptions[0].dataset.name : firebase.firestore.FieldValue.delete();
-          const sig = getTeacherSignature();
-          if(sig !== undefined) payload.signatureDataUrl = sig;
-          await db.collection("users").doc(u.id).update(payload);
-          closeModal(); toast("Assignments saved","success"); renderApp($("#app"), location.hash);
+        $("#as-cancel",body).onclick = closeModal;
+        $("#as-save",body).onclick = async ()=>{
+          const name = $("#as-name",body).value.trim(), email = $("#as-email",body).value.trim(), pass = $("#as-pass",body).value;
+          const role = $("#as-role",body).value;
+          const msg = $("#add-staff-msg", body);
+          if(!name || !email || pass.length < 6){ msg.innerHTML = `<div class="err-msg">Fill all fields — password needs 6+ characters.</div>`; return; }
+          try{
+            const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+            await db.collection("users").doc(cred.user.uid).set({
+              name, email, role, assignments: [], createdAt: nowStamp()
+            });
+            await secondaryAuth.signOut();
+            await logAudit("create_staff", {email, role});
+            closeModal(); toast(`${role} account created for ${name}`, "success");
+            renderApp($("#app"), location.hash);
+          }catch(err){ msg.innerHTML = `<div class="err-msg">${esc(err.message)}</div>`; }
         };
       });
-  });
+
+    $all("[data-assign-teacher]").forEach(b=> b.onclick = ()=>{
+      const u = users.find(x=>x.id===b.dataset.assignTeacher);
+      openModal(`Assign ${u.name}`, `
+        <p class="small-note" style="margin-bottom:10px;">A teacher can hold <b>both</b> roles at once: they can be the <b>Class Teacher</b> of one class (full access to that class's students, attendance and character reports) <i>and</i> a <b>Subject Teacher</b> for one or more subject + class combinations (can only record results for their own assigned subjects).</p>
+
+        <div class="rc-section-title" style="margin-top:0;">Subject Teacher Assignment(s):</div>
+        <div class="field-row">
+          <div class="field"><label>Subject</label><select id="at-subject">${subjects.map(s=>`<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join("")}</select></div>
+          <div class="field"><label>Class</label><select id="at-class">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}">${esc(c.name)}</option>`).join("")}</select></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="at-add" type="button">+ Add to list</button>
+        <div style="margin-top:12px;" id="at-list">
+          ${(u.assignments||[]).map((a,i)=>`<div data-idx="${i}" style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);">${esc(a.subjectName)} — ${esc(a.className)}</div>`).join("")}
+        </div>
+
+        <div class="rc-section-title">Class Teacher Assignment:</div>
+        <div class="field"><label><input type="checkbox" style="width:auto;" id="at-classteacher" ${u.classTeacherOf?'checked':''}> Make this person the Class Teacher of:</label>
+          <select id="at-classteacher-select">${classes.map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${u.classTeacherOf===c.id?'selected':''}>${esc(c.name)}</option>`).join("")}</select>
+        </div>
+        <p class="small-note">Class Teacher = full access to every subject's results, attendance, and character/practical-skill reports for that one class only. Subject Teacher = can only enter/edit results for the subject(s) + class(es) listed above.</p>
+
+        <div class="rc-section-title">Class Teacher's Signature (optional):</div>
+        <p class="small-note" style="margin-bottom:6px;">Only needed if this teacher can't upload their own from "My Class (Full Access)".</p>
+        <div class="sig-upload-wrap">
+          <div class="sig-preview" id="at-sig-preview"></div>
+          <div>
+            <input type="file" accept="image/*" id="at-sig-file">
+            <button type="button" class="btn btn-outline btn-sm" id="at-sig-remove" style="margin-top:8px;">Remove Signature</button>
+          </div>
+        </div>
+
+        <div class="modal-actions"><button class="btn btn-outline" id="at-cancel">Cancel</button><button class="btn btn-primary" id="at-save">Save Assignments</button></div>`,
+        body=>{
+          let assignments = [...(u.assignments||[])];
+          const getTeacherSignature = wireSignatureUpload("at-sig-file", "at-sig-preview", "at-sig-remove", u.signatureDataUrl||null);
+          function redraw(){ $("#at-list",body).innerHTML = assignments.map((a,i)=>`<div style="font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">${esc(a.subjectName)} — ${esc(a.className)} <button type="button" data-rm="${i}" class="btn icon-btn">✕</button></div>`).join("");
+            $all("[data-rm]",body).forEach(x=> x.onclick = ()=>{ assignments.splice(parseInt(x.dataset.rm),1); redraw(); }); }
+          redraw();
+          $("#at-add",body).onclick = ()=>{
+            const subjSel = $("#at-subject",body), classSel = $("#at-class",body);
+            assignments.push({subjectId:subjSel.value, subjectName:subjSel.selectedOptions[0].dataset.name, classId:classSel.value, className:classSel.selectedOptions[0].dataset.name});
+            redraw();
+          };
+          $("#at-cancel",body).onclick = closeModal;
+          $("#at-save",body).onclick = async ()=>{
+            const ctChecked = $("#at-classteacher",body).checked;
+            const ctSel = $("#at-classteacher-select",body);
+            const payload = {assignments};
+            payload.classTeacherOf = ctChecked ? ctSel.value : firebase.firestore.FieldValue.delete();
+            payload.classTeacherOfName = ctChecked ? ctSel.selectedOptions[0].dataset.name : firebase.firestore.FieldValue.delete();
+            const sig = getTeacherSignature();
+            if(sig !== undefined) payload.signatureDataUrl = sig;
+            await db.collection("users").doc(u.id).update(payload);
+            closeModal(); toast("Assignments saved","success"); renderApp($("#app"), location.hash);
+          };
+        });
+    });
+  }
+
+  if(canDelete){
+    $all("[data-del-staff]").forEach(b=> b.onclick = async ()=>{
+      const uid = b.dataset.delStaff;
+      const name = b.dataset.staffName || "this staff member";
+      const confirmed = await confirmDialog(
+        `Remove ${name} from the system? This deletes their portal profile, role, class-teacher status and subject assignments — they will no longer be able to access anything as staff. Note: their login credential in Firebase Authentication is not deleted by this action (do that separately in the Firebase Console if you also want to block their email/password entirely); they will simply be treated as an unrecognised account and signed out automatically on next login.`,
+        "Delete Staff"
+      );
+      if(!confirmed) return;
+      try{
+        await db.collection("users").doc(uid).delete();
+        await logAudit("delete_staff", {uid, name});
+        toast(`${name} removed`, "success");
+        renderApp($("#app"), location.hash);
+      }catch(err){ toast(err.message, "error"); }
+    });
+  }
 }
 
 /* =========================================================================
@@ -5575,17 +5651,21 @@ auth.onAuthStateChanged(async user => {
                 state.currentTerm = sess.currentTerm || "first";
             }
         } else {
-            state.profile = {
-                name: user.email,
-                role: "parent",
-                assignments: [],
-                linkedStudentIds: []
-            };
-
+            // No matching profile — either a brand new sign-in that was
+            // never assigned a role, or (most commonly now) a staff
+            // account an Admin/Principal has deleted from Staff & Users.
+            // Either way, don't silently grant a default "parent" role —
+            // sign the account out and explain what happened.
+            await auth.signOut();
+            state.user = null;
+            state.profile = null;
+            state.authReady = true;
+            render();
             toast(
-                "Your account has no role assigned yet. Contact the school admin.",
+                "This account is no longer registered in the system. Contact the school admin if you believe this is a mistake.",
                 "error"
             );
+            return;
         }
 
     } catch (e) {
